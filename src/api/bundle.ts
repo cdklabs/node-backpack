@@ -139,7 +139,7 @@ export interface Externals {
 export class Bundle {
 
   private readonly manifest: any;
-  private readonly noticePath: string;
+  private readonly attributionsFile: string;
 
   private readonly packageDir: string;
   private readonly entryPoints: Record<string, string>;
@@ -157,7 +157,7 @@ export class Bundle {
 
   constructor(props: BundleProps) {
     this.packageDir = props.packageDir;
-    this.noticePath = props.attributionsFile ?? 'THIRD_PARTY_LICENSES';
+    this.attributionsFile = props.attributionsFile ?? 'THIRD_PARTY_LICENSES';
     this.manifest = fs.readJsonSync(path.join(this.packageDir, 'package.json'));
     this.externals = props.externals ?? {};
     this.resources = props.resources ?? {};
@@ -325,7 +325,7 @@ export class Bundle {
       this._attributions = new Attributions({
         packageDir: this.packageDir,
         packageName: this.manifest.name,
-        filePath: this.noticePath,
+        filePath: this.attributionsFile,
         dependencies: this.dependencies,
         dependenciesRoot: this.dependenciesRoot,
         exclude: this.dontAttribute,
