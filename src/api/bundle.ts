@@ -170,7 +170,7 @@ export class Bundle {
   constructor(props: BundleProps) {
     this.packageDir = props.packageDir;
     this.licensesFile = props.licensesFile ?? 'THIRD_PARTY_LICENSES';
-    this.versionsFile = props.versionsFile ?? 'THIRD_PARTY_VERSIONS';
+    this.versionsFile = props.versionsFile;
     this.manifest = fs.readJsonSync(path.join(this.packageDir, 'package.json'));
     this.externals = props.externals ?? {};
     this.resources = props.resources ?? {};

@@ -22,7 +22,7 @@ test('validate', () => {
   const expected = new Set([
     'circular-import: lib/bar.js -> lib/foo.js',
     'missing-resource: Unable to find resource (missing) relative to the package directory',
-    'outdated-attributions: THIRD_PARTY_LICENSES is outdated',
+    'outdated-licenses: THIRD_PARTY_LICENSES is outdated',
     `invalid-license: Dependency ${dep1.name}@${dep2.version} has an invalid license: UNKNOWN`,
     `multiple-license: Dependency ${dep2.name}@${dep2.version} has multiple licenses: Apache-2.0,MIT`,
   ]);
@@ -155,3 +155,5 @@ test('write ignores only .git and node_modules directories', () => {
   expect(fs.existsSync(path.join(bundleDir, 'node_modules_file'))).toBeTruthy();
 
 });
+
+test('versions can be encoded separately from licenses', () => {});

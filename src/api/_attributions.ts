@@ -63,7 +63,7 @@ export class Attributions {
   private readonly dependencies: Package[];
   private readonly allowedLicenses: string[];
   private readonly dependenciesRoot: string;
-  private readonly contentPath: string;
+  private readonly licensesPath: string;
   private readonly versionsPath?: string;
 
   private readonly attributions: Attribution[];
@@ -73,14 +73,15 @@ export class Attributions {
   constructor(props: AttributionsProps) {
     this.packageDir = props.packageDir;
     this.packageName = props.packageName;
-    this.contentPath = path.join(this.packageDir, props.licensesPath);
+    this.licensesPath = path.join(this.packageDir, props.licensesPath);
+    this.versionsPath = props.versionsPath ? path.join(this.packageDir, props.versionsPath) : undefined;
     this.dependencies = props.dependencies.filter(d => !props.exclude || !new RegExp(props.exclude).test(d.name));
     this.allowedLicenses = props.allowedLicenses.map(l => l.toLowerCase());
     this.dependenciesRoot = props.dependenciesRoot;
 
     // without the generated notice content, this object is pretty much
     // useless, so lets generate those of the bat.
-    this.attributions = this.generateAttributions();
+    this.attributions = this.attribute();
     const { licenses, versions } = this.render(this.attributions);
 
     this.licenses = licenses;
@@ -95,20 +96,32 @@ export class Attributions {
   public validate(): ViolationsReport {
 
     const violations: Violation[] = [];
-    const relNoticePath = path.relative(this.packageDir, this.contentPath);
+    const relLicensesPath = path.relative(this.packageDir, this.licensesPath);
+    const relVersionsPath = this.versionsPath ? path.relative(this.packageDir, this.versionsPath) : undefined;
 
     const fix = () => this.flush();
 
-    const missing = !fs.existsSync(this.contentPath);
-    const attributions = missing ? undefined : fs.readFileSync(this.contentPath, { encoding: 'utf-8' });
-    const outdated = attributions !== undefined && attributions !== this.licenses;
+    const missingLicenses = !fs.existsSync(this.licensesPath);
+    const missingVersions = this.versionsPath && !fs.existsSync(this.versionsPath);
+    const licenses = missingLicenses ? undefined : fs.readFileSync(this.licensesPath, { encoding: 'utf-8' });
+    const versions = (missingVersions || !this.versionsPath) ? undefined : fs.readFileSync(this.versionsPath, { encoding: 'utf-8' });
+    const outdatedLicenses = licenses !== undefined && licenses !== this.licenses;
+    const outdatedVersions = versions !== undefined && versions !== this.versions;
 
-    if (missing) {
-      violations.push({ type: ViolationType.MISSING_NOTICE, message: `${relNoticePath} is missing`, fix });
+    if (missingLicenses) {
+      violations.push({ type: ViolationType.MISSING_LICENSES, message: `${relLicensesPath} is missing`, fix });
     }
 
-    if (outdated) {
-      violations.push({ type: ViolationType.OUTDATED_ATTRIBUTIONS, message: `${relNoticePath} is outdated`, fix });
+    if (outdatedLicenses) {
+      violations.push({ type: ViolationType.OUTDATED_LICENSES, message: `${relLicensesPath} is outdated`, fix });
+    }
+
+    if (missingVersions) {
+      violations.push({ type: ViolationType.MISSING_VERSIONS, message: `${relVersionsPath} is missing`, fix });
+    }
+
+    if (outdatedVersions) {
+      violations.push({ type: ViolationType.OUTDATED_VERSIONS, message: `${relVersionsPath} is outdated`, fix });
     }
 
     const invalidLicense: Violation[] = Array.from(this.attributions.values())
@@ -134,7 +147,7 @@ export class Attributions {
    * Flush the generated attributions files to disk.
    */
   public flush() {
-    fs.writeFileSync(this.contentPath, this.licenses);
+    fs.writeFileSync(this.licensesPath, this.licenses);
     if (this.versionsPath) {
       fs.writeFileSync(this.versionsPath, this.versions);
     }
@@ -182,7 +195,7 @@ export class Attributions {
 
   }
 
-  private generateAttributions(): Attribution[] {
+  private attribute(): Attribution[] {
 
     if (this.dependencies.length === 0) {
       return [];

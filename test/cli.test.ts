@@ -26,7 +26,7 @@ test('validate', () => {
     const expected = new Set([
       `- invalid-license: Dependency ${dep1.name}@${dep1.version} has an invalid license: UNKNOWN`,
       `- multiple-license: Dependency ${dep2.name}@${dep2.version} has multiple licenses: Apache-2.0,MIT`,
-      '- outdated-attributions: THIRD_PARTY_LICENSES is outdated (fixable)',
+      '- outdated-licenses: THIRD_PARTY_LICENSES is outdated (fixable)',
       '- missing-resource: Unable to find resource (missing) relative to the package directory',
       '- circular-import: lib/bar.js -> lib/foo.js',
     ]);

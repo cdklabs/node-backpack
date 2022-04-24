@@ -9,14 +9,24 @@ export enum ViolationType {
   CIRCULAR_IMPORT = 'circular-import',
 
   /**
-   * Outdated attributions file.
+   * Outdated licenses file.
    */
-  OUTDATED_ATTRIBUTIONS = 'outdated-attributions',
+  OUTDATED_LICENSES = 'outdated-licenses',
 
   /**
-   * Missing notice file.
+   * Outdated versions file.
    */
-  MISSING_NOTICE = 'missing-notice',
+  OUTDATED_VERSIONS = 'outdated-versions',
+
+  /**
+   * Missing licenses file.
+   */
+  MISSING_LICENSES = 'missing-liceneses',
+
+  /**
+   * Missing versions file.
+   */
+  MISSING_VERSIONS = 'missing-versions',
 
   /**
    * Invalid license.
