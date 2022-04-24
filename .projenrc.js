@@ -2,7 +2,7 @@ const { typescript } = require('projen');
 const project = new typescript.TypeScriptProject({
   name: 'node-backpack',
   defaultReleaseBranch: 'main',
-  releaseToNpm: false,
+  releaseToNpm: true,
   devDeps: [
     '@types/madge',
     '@types/license-checker',
