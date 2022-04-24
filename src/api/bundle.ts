@@ -33,12 +33,12 @@ export interface BundleProps {
   readonly entryPoints?: string[];
 
   /**
-   * Path to attributions file that will be created / validated.
+   * Path to the attribution licenses file to be created / validated.
    * This path is relative to the package directory.
    *
    * @default 'THIRD_PARTY_LICENSES'
    */
-  readonly attributionsFile?: string;
+  readonly licensesFile?: string;
 
   /**
    * External packages that cannot be bundled.
@@ -73,6 +73,17 @@ export interface BundleProps {
    * @default - no check.
    */
   readonly test?: string;
+
+  /**
+   * Path to the attribution versions file to be created / validated.
+   * This path is relative to the package directory.
+   *
+   * If this property is set, dependency versions are left out of the
+   * licenses document configured by `licensesFile`, and outputed into this file instead.
+   *
+   * @default - versions are encoded inside the licenses file.
+   */
+  readonly versionsFile?: string;
 }
 
 /**
@@ -139,7 +150,8 @@ export interface Externals {
 export class Bundle {
 
   private readonly manifest: any;
-  private readonly attributionsFile: string;
+  private readonly licensesFile: string;
+  private readonly versionsFile?: string;
 
   private readonly packageDir: string;
   private readonly entryPoints: Record<string, string>;
@@ -157,7 +169,8 @@ export class Bundle {
 
   constructor(props: BundleProps) {
     this.packageDir = props.packageDir;
-    this.attributionsFile = props.attributionsFile ?? 'THIRD_PARTY_LICENSES';
+    this.licensesFile = props.licensesFile ?? 'THIRD_PARTY_LICENSES';
+    this.versionsFile = props.versionsFile ?? 'THIRD_PARTY_VERSIONS';
     this.manifest = fs.readJsonSync(path.join(this.packageDir, 'package.json'));
     this.externals = props.externals ?? {};
     this.resources = props.resources ?? {};
@@ -325,7 +338,8 @@ export class Bundle {
       this._attributions = new Attributions({
         packageDir: this.packageDir,
         packageName: this.manifest.name,
-        filePath: this.attributionsFile,
+        licensesPath: this.licensesFile,
+        versionsPath: this.versionsFile,
         dependencies: this.dependencies,
         dependenciesRoot: this.dependenciesRoot,
         exclude: this.dontAttribute,
