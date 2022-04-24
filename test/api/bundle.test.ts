@@ -9,6 +9,9 @@ test('validate', () => {
   const dep1 = pkg.addDependency({ name: 'dep1', licenses: ['INVALID'] });
   const dep2 = pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0', 'MIT'] });
 
+  // create an outdated licenses file.
+  pkg.thirdPartyLicenses = 'outdated';
+
   pkg.write();
   pkg.install();
 
@@ -49,7 +52,6 @@ test('write', () => {
 
   expect(fs.existsSync(path.join(bundleDir, pkg.entrypoint))).toBeTruthy();
   expect(fs.existsSync(path.join(bundleDir, 'package.json'))).toBeTruthy();
-  expect(fs.existsSync(path.join(bundleDir, 'THIRD_PARTY_LICENSES'))).toBeTruthy();
   expect(fs.existsSync(path.join(bundleDir, 'lib', 'foo.js'))).toBeTruthy();
   expect(fs.existsSync(path.join(bundleDir, 'lib', 'bar.js'))).toBeTruthy();
   expect(fs.existsSync(path.join(bundleDir, 'node_modules'))).toBeFalsy();
@@ -67,7 +69,7 @@ test('pack', () => {
   const dep1 = pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
   const dep2 = pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0'] });
 
-  const attributions = [
+  const thirdPartyLicenses = [
     'The consumer package includes the following third-party software/licensing:',
     '',
     `** ${dep1.name}@${dep1.version} - https://www.npmjs.com/package/${dep1.name}/v/${dep1.version} | MIT`,
@@ -80,7 +82,7 @@ test('pack', () => {
     '',
   ];
 
-  pkg.attributions = attributions.join('\n');
+  pkg.thirdPartyLicenses = thirdPartyLicenses.join('\n');
 
   pkg.write();
   pkg.install();
@@ -156,4 +158,66 @@ test('write ignores only .git and node_modules directories', () => {
 
 });
 
-test('versions can be encoded separately from licenses', () => {});
+test('validates missing versions file', () => {
+
+  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
+  pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
+
+  pkg.write();
+  pkg.install();
+
+  const bundle = new Bundle({
+    packageDir: pkg.dir,
+    entryPoints: [pkg.entrypoint],
+    versionsFile: 'THIRD_PARTY_VERSIONS',
+  });
+  const actual = new Set(bundle.validate().violations.map(v => `${v.type}: ${v.message}`));
+  expect(actual).toContain('missing-versions: THIRD_PARTY_VERSIONS is missing');
+});
+
+test('validates outdated versions file', () => {
+
+  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
+  pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
+
+  // create an outdated versions file.
+  pkg.thirdPartyVersions = 'outdated';
+
+  pkg.write();
+  pkg.install();
+
+  const bundle = new Bundle({
+    packageDir: pkg.dir,
+    entryPoints: [pkg.entrypoint],
+    versionsFile: 'THIRD_PARTY_VERSIONS',
+  });
+  const actual = new Set(bundle.validate().violations.map(v => `${v.type}: ${v.message}`));
+  expect(actual).toContain('outdated-versions: THIRD_PARTY_VERSIONS is outdated');
+});
+
+test('versions can be encoded separtely from licenses', () => {
+
+  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
+  const dep1 = pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
+  const dep2 = pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0'] });
+
+  pkg.write();
+  pkg.install();
+
+  const bundle = new Bundle({
+    packageDir: pkg.dir,
+    entryPoints: [pkg.entrypoint],
+    allowedLicenses: ['Apache-2.0', 'MIT'],
+    excludeVersionsFromAttribution: true,
+  });
+
+  bundle.validate({ fix: true });
+  const bundleDir = bundle.write();
+
+  expect(fs.existsSync(path.join(bundleDir, 'THIRD_PARTY_VERSIONS'))).toBeTruthy();
+
+  const versions = fs.readJSONSync(path.join(bundleDir, 'THIRD_PARTY_VERSIONS'));
+
+  expect(versions).toEqual({ [dep1.name]: [dep1.version], [dep2.name]: [dep2.version] });
+
+});

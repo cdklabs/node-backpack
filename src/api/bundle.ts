@@ -75,6 +75,14 @@ export interface BundleProps {
   readonly test?: string;
 
   /**
+   * When set to true, activates the `versionsFile` property with a
+   * default of 'THIRD_PARTY_LICENSES'.
+   *
+   * @default false
+   */
+  readonly excludeVersionsFromAttribution?: boolean;
+
+  /**
    * Path to the attribution versions file to be created / validated.
    * This path is relative to the package directory.
    *
@@ -169,8 +177,13 @@ export class Bundle {
 
   constructor(props: BundleProps) {
     this.packageDir = props.packageDir;
+
+    if (props.excludeVersionsFromAttribution === false && props.versionsFile) {
+      throw new Error('\'versionsFile\' cannot be set when \'excludeVersionsFromAttribution\' is false');
+    }
+
     this.licensesFile = props.licensesFile ?? 'THIRD_PARTY_LICENSES';
-    this.versionsFile = props.versionsFile;
+    this.versionsFile = props.versionsFile ?? (props.excludeVersionsFromAttribution ? 'THIRD_PARTY_VERSIONS' : undefined);
     this.manifest = fs.readJsonSync(path.join(this.packageDir, 'package.json'));
     this.externals = props.externals ?? {};
     this.resources = props.resources ?? {};

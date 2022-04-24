@@ -9,6 +9,8 @@ test('validate', () => {
   const dep1 = pkg.addDependency({ name: 'dep1', licenses: ['INVALID'] });
   const dep2 = pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0', 'MIT'] });
 
+  pkg.thirdPartyLicenses = 'outdated';
+
   pkg.write();
   pkg.install();
 
@@ -55,7 +57,6 @@ test('write', () => {
 
   expect(fs.existsSync(path.join(bundleDir, pkg.entrypoint))).toBeTruthy();
   expect(fs.existsSync(path.join(bundleDir, 'package.json'))).toBeTruthy();
-  expect(fs.existsSync(path.join(bundleDir, 'THIRD_PARTY_LICENSES'))).toBeTruthy();
   expect(fs.existsSync(path.join(bundleDir, 'lib', 'foo.js'))).toBeTruthy();
   expect(fs.existsSync(path.join(bundleDir, 'lib', 'bar.js'))).toBeTruthy();
   expect(fs.existsSync(path.join(bundleDir, 'node_modules'))).toBeFalsy();
@@ -121,7 +122,7 @@ test('pack', () => {
     '',
   ];
 
-  pkg.attributions = attributions.join('\n');
+  pkg.thirdPartyLicenses = attributions.join('\n');
 
   pkg.write();
   pkg.install();
