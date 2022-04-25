@@ -5,12 +5,9 @@ import { Package } from '../_package';
 
 test('validate', () => {
 
-  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'], circular: true });
+  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'], circular: true, thirdPartyLicenses: 'outdated' });
   const dep1 = pkg.addDependency({ name: 'dep1', licenses: ['INVALID'] });
   const dep2 = pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0', 'MIT'] });
-
-  // create an outdated licenses file.
-  pkg.thirdPartyLicenses = 'outdated';
 
   pkg.write();
   pkg.install();
@@ -46,6 +43,8 @@ test('write', () => {
     packageDir: pkg.dir,
     entryPoints: [pkg.entrypoint],
     allowedLicenses: ['Apache-2.0', 'MIT'],
+    // makes the bundle snapshot determenistic
+    sourcemap: false,
   });
 
   const bundleDir = bundle.write();
@@ -58,7 +57,10 @@ test('write', () => {
   expect(fs.existsSync(path.join(bundleDir, '.git'))).toBeFalsy();
 
   const manifest = fs.readJSONSync(path.join(bundleDir, 'package.json'));
+  const entrypoint = fs.readFileSync(path.join(bundleDir, pkg.entrypoint), { encoding: 'utf-8' });
 
+  expect(entrypoint).toMatchSnapshot();
+  expect(Object.keys(manifest.devDependencies)).toEqual(['dep1', 'dep2']);
   expect(manifest.dependencies).toEqual({});
 
 });
@@ -66,23 +68,8 @@ test('write', () => {
 test('pack', () => {
 
   const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
-  const dep1 = pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
-  const dep2 = pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0'] });
-
-  const thirdPartyLicenses = [
-    'The consumer package includes the following third-party software/licensing:',
-    '',
-    `** ${dep1.name}@${dep1.version} - https://www.npmjs.com/package/${dep1.name}/v/${dep1.version} | MIT`,
-    '',
-    '----------------',
-    '',
-    `** ${dep2.name}@${dep2.version} - https://www.npmjs.com/package/${dep2.name}/v/${dep2.version} | Apache-2.0`,
-    '',
-    '----------------',
-    '',
-  ];
-
-  pkg.thirdPartyLicenses = thirdPartyLicenses.join('\n');
+  pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
+  pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0'] });
 
   pkg.write();
   pkg.install();
@@ -92,6 +79,10 @@ test('pack', () => {
     entryPoints: [pkg.entrypoint],
     allowedLicenses: ['Apache-2.0', 'MIT'],
   });
+
+  // we need to first fix all violations
+  // before we can pack
+  bundle.validate({ fix: true });
 
   bundle.pack();
 
@@ -115,18 +106,16 @@ test('validate and fix', () => {
     allowedLicenses: ['Apache-2.0', 'MIT'],
   });
 
-  try {
-    bundle.pack();
-    throw new Error('Expected packing to fail before fixing');
-  } catch (e) {
-    // this should fix the fact we don't generate
-    // the project with the correct notice
-    bundle.validate({ fix: true });
-  }
+  const report = bundle.validate({ fix: true });
+  expect(report.violations.length).toEqual(0);
 
-  bundle.pack();
-  const tarball = path.join(pkg.dir, `${pkg.name}-${pkg.version}.tgz`);
-  expect(fs.existsSync(tarball)).toBeTruthy();
+  const thirdPartyLicensesPath = path.join(pkg.dir, 'THIRD_PARTY_LICENSES');
+
+  // make sure all files are good
+  expect(fs.existsSync(thirdPartyLicensesPath));
+
+  const thirdPartyLicenses = fs.readFileSync(thirdPartyLicensesPath, { encoding: 'utf-8' });
+  expect(thirdPartyLicenses).toMatchSnapshot();
 
 });
 
@@ -177,11 +166,8 @@ test('validates missing versions file', () => {
 
 test('validates outdated versions file', () => {
 
-  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
+  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'], thirdPartyVersions: 'outdated' });
   pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
-
-  // create an outdated versions file.
-  pkg.thirdPartyVersions = 'outdated';
 
   pkg.write();
   pkg.install();
@@ -198,8 +184,8 @@ test('validates outdated versions file', () => {
 test('versions can be encoded separtely from licenses', () => {
 
   const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
-  const dep1 = pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
-  const dep2 = pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0'] });
+  pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
+  pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0'] });
 
   pkg.write();
   pkg.install();
@@ -208,16 +194,19 @@ test('versions can be encoded separtely from licenses', () => {
     packageDir: pkg.dir,
     entryPoints: [pkg.entrypoint],
     allowedLicenses: ['Apache-2.0', 'MIT'],
-    excludeVersionsFromAttribution: true,
+    attributeVersionsSeparately: true,
   });
 
   bundle.validate({ fix: true });
   const bundleDir = bundle.write();
 
   expect(fs.existsSync(path.join(bundleDir, 'THIRD_PARTY_VERSIONS'))).toBeTruthy();
+  expect(fs.existsSync(path.join(bundleDir, 'THIRD_PARTY_LICENSES'))).toBeTruthy();
 
   const versions = fs.readJSONSync(path.join(bundleDir, 'THIRD_PARTY_VERSIONS'));
+  const licenses = fs.readFileSync(path.join(bundleDir, 'THIRD_PARTY_LICENSES'), { encoding: 'utf-8' });
 
-  expect(versions).toEqual({ [dep1.name]: [dep1.version], [dep2.name]: [dep2.version] });
+  expect(versions).toMatchSnapshot();
+  expect(licenses).toMatchSnapshot();
 
 });

@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as yargs from 'yargs';
-import { Bundle, BundleProps, BundleValidateOptions } from './api';
+import { Bundle, BundlePackOptions, BundleProps, BundleValidateOptions } from './api';
 
 function versionNumber(): string {
   return fs.readJSONSync(path.join(__dirname, '..', 'package.json')).version;
@@ -15,13 +15,18 @@ async function buildCommands() {
     .option('external', { type: 'array', nargs: 1, default: [], desc: 'Packages in this list will be excluded from the bundle and added as dependencies (example: fsevents:optional)' })
     .option('allowed-license', { type: 'array', nargs: 1, default: [], desc: 'List of valid licenses' })
     .option('resource', { type: 'array', nargs: 1, default: [], desc: 'List of resources that need to be explicitly copied to the bundle (example: node_modules/proxy-agent/contextify.js:bin/contextify.js)' })
-    .option('dont-attribute', { type: 'string', desc: 'Dependencies matching this regular expressions wont be added to the notice file' })
+    .option('dont-attribute', { type: 'string', desc: 'Dependencies matching this regular expressions wont be added to the attribution files' })
     .option('test', { type: 'string', desc: 'Validation command to sanity test the bundle after its created' })
+    .option('attribute-versions-separately', { type: 'boolean', desc: 'Attribute dependency versions information separately from the licenses file' })
+    .option('versions-file', { type: 'string', desc: 'File to write dependency versions information. Only applies if \'attribute-versions-separately\' is used' })
+    .option('licenses-file', { type: 'string', desc: 'File to write dependency licenses information. Defaults to \'THIRD_PARTY_LICENSES\'' })
     .command('validate', 'Validate the package is ready for bundling', args => args
       .option('fix', { type: 'boolean', default: false, alias: 'f', desc: 'Fix any fixable violations' }),
     )
     .command('write', 'Write the bundled version of the project to a temp directory')
-    .command('pack', 'Write the bundle and create the tarball')
+    .command('pack', 'Write the bundle and create the tarball', args => args
+      .option('target', { type: 'string', desc: 'Target directory of the tarball' }),
+    )
     .help()
     .version(versionNumber())
     .argv;
@@ -66,6 +71,7 @@ async function buildCommands() {
     resources: resources,
     dontAttribute: argv['dont-attribute'],
     test: argv.test,
+    attributeVersionsSeparately: argv['attribute-versions-separately'],
   };
 
   const bundle = new Bundle(props);
@@ -78,7 +84,7 @@ async function buildCommands() {
       write(bundle);
       break;
     case 'pack':
-      pack(bundle);
+      pack(bundle, { target: argv.target });
       break;
     default:
       throw new Error(`Unknown command: ${command}`);
@@ -97,8 +103,8 @@ function validate(bundle: Bundle, options: BundleValidateOptions = {}) {
   }
 }
 
-function pack(bundle: Bundle) {
-  bundle.pack();
+function pack(bundle: Bundle, options: BundlePackOptions = {}) {
+  bundle.pack(options);
 }
 
 buildCommands()

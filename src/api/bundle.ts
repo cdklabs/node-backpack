@@ -80,7 +80,7 @@ export interface BundleProps {
    *
    * @default false
    */
-  readonly excludeVersionsFromAttribution?: boolean;
+  readonly attributeVersionsSeparately?: boolean;
 
   /**
    * Path to the attribution versions file to be created / validated.
@@ -92,6 +92,13 @@ export interface BundleProps {
    * @default - versions are encoded inside the licenses file.
    */
   readonly versionsFile?: string;
+
+  /**
+   * Include inline source map in the bundle file.
+   *
+   * @default true
+   */
+  readonly sourcemap?: boolean;
 }
 
 /**
@@ -168,6 +175,7 @@ export class Bundle {
   private readonly allowedLicenses: string[];
   private readonly dontAttribute?: string;
   private readonly test?: string;
+  private readonly sourcemap: boolean;
 
   private _bundle?: esbuild.BuildResult;
   private _dependencies?: Package[];
@@ -178,16 +186,17 @@ export class Bundle {
   constructor(props: BundleProps) {
     this.packageDir = props.packageDir;
 
-    if (props.excludeVersionsFromAttribution === false && props.versionsFile) {
+    if (props.attributeVersionsSeparately === false && props.versionsFile) {
       throw new Error('\'versionsFile\' cannot be set when \'excludeVersionsFromAttribution\' is false');
     }
 
     this.licensesFile = props.licensesFile ?? 'THIRD_PARTY_LICENSES';
-    this.versionsFile = props.versionsFile ?? (props.excludeVersionsFromAttribution ? 'THIRD_PARTY_VERSIONS' : undefined);
+    this.versionsFile = props.versionsFile ?? (props.attributeVersionsSeparately ? 'THIRD_PARTY_VERSIONS' : undefined);
     this.manifest = fs.readJsonSync(path.join(this.packageDir, 'package.json'));
     this.externals = props.externals ?? {};
     this.resources = props.resources ?? {};
     this.test = props.test;
+    this.sourcemap = props.sourcemap ?? true;
     this.allowedLicenses = props.allowedLicenses ?? DEFAULT_ALLOWED_LICENSES;
     this.dontAttribute = props.dontAttribute;
     this.entryPoints = {};
@@ -421,7 +430,7 @@ export class Bundle {
       bundle: true,
       target: 'node12',
       platform: 'node',
-      sourcemap: 'inline',
+      sourcemap: this.sourcemap ? 'inline' : false,
       metafile: true,
       treeShaking: true,
       absWorkingDir: this.packageDir,

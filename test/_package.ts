@@ -23,6 +23,17 @@ export interface PackageOptions {
    * Package licenses.
    */
   readonly licenses?: string[];
+
+  /**
+   * The 'THIRD_PARTY_LICENSES' file.
+   */
+  readonly thirdPartyLicenses?: string;
+
+  /**
+   * The 'THIRD_PARTY_VERSIONS' file.
+   */
+  readonly thirdPartyVersions?: string;
+
 }
 
 /**
@@ -64,7 +75,7 @@ export class Package {
       'require("./bar");',
     ];
 
-    return new Package(dir, manifest, index, foo, bar);
+    return new Package(dir, manifest, index, foo, bar, options.thirdPartyLicenses, options.thirdPartyVersions);
   }
 
   private readonly dependencies: Package[] = [];
@@ -75,8 +86,9 @@ export class Package {
     public readonly index: string[],
     public readonly foo: string[],
     public readonly bar: string[],
-    public thirdPartyLicenses?: string,
-    public thirdPartyVersions?: string) {
+    public readonly thirdPartyLicenses?: string,
+    public readonly thirdPartyVersions?: string) {
+
     this.manifest.main = this.entrypoint;
   }
 

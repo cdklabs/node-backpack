@@ -120,12 +120,40 @@ const bundle = new Bundle({
 bundle.pack();
 ```
 
-### Integrate with your build process
+### Packing
+
+This tool offers a packaging mechanism designed to your replace your existing command.
+When packaging is done, it also validates your package is [valid](#validation).
+
+### Validation
+
+In order for the package to be properly bundled, some requirements exist from the package:
+
+1. Your code doesn't exhibit any circular imports.
+2. Your package contains a `THIRD_PARTY_LICENSES` file with licenses information of all your dependencies.
+3. Your package contains a `THIRD_PARTY_VERSIONS` file with versions information of all your dependencies.
+
+Some violations can be automatically fixed (2 & 3 can be automatically generated), and some cannot (1 requires manual code changes).
+
+## Integrate with your build process
 
 We recommend to integrate this tool in the following way:
 
-1. Add a `node-backpack validate` command as a post compile step.
-2. Set your packaging command to `node-backpack pack`.
+- Add a `node-backpack validate` command as a post compile step.
+
+  This command will validate your package is ready for bundling.
+  Among others, it will validate the `THIRD_PARTY_LICENSES` is up to
+  date with all dependencies you use.
+
+- Add a `node-backpack validate --fix` command to your dependencies upgrade task.
+
+  Upgrading dependencies can pu
+
+- Set your packaging command to `node-backpack pack`.
+
+  This command will create the bundled NPM tarball. It will also run the validation step,
+  to make sure it doesn't pack an invalid package.
+
 
 This way, you can validate local dev builds not to break any functionality needed for bundling.
 In addition, developers can run `node-backpack validate --fix` to automatically fix any (fixable) violations
