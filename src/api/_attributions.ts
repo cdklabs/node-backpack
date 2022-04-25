@@ -29,9 +29,9 @@ export interface AttributionsProps {
    */
   readonly dependenciesRoot: string;
   /**
-   * Path to the attribution licenses file to be created / validated.
+   * Path to the notice file to created / validated.
    */
-  readonly licensesPath: string;
+  readonly filePath: string;
   /**
    * List of allowed licenses.
    *
@@ -44,13 +44,11 @@ export interface AttributionsProps {
    */
   readonly exclude?: string;
   /**
-   * Path to the attribution versions file to be created / validated.
-   * If this property is set, dependency versions are left out of the
-   * licenses document, and outputed into this file.
+   * Encode package version information in the attribution file.
    *
-   * @default - versions are encoded inside the licenses file.
+   * @default false
    */
-  readonly versionsPath?: string;
+  readonly encodeVersions?: boolean;
 }
 
 /**
@@ -63,28 +61,28 @@ export class Attributions {
   private readonly dependencies: Package[];
   private readonly allowedLicenses: string[];
   private readonly dependenciesRoot: string;
-  private readonly licensesPath: string;
-  private readonly versionsPath?: string;
+  private readonly filePath: string;
+  private readonly encodeVersions: boolean;
 
   private readonly attributions: Attribution[];
-  private readonly licenses: string;
+  private readonly content: string;
   private readonly versions: string;
 
   constructor(props: AttributionsProps) {
     this.packageDir = props.packageDir;
     this.packageName = props.packageName;
-    this.licensesPath = path.join(this.packageDir, props.licensesPath);
-    this.versionsPath = props.versionsPath ? path.join(this.packageDir, props.versionsPath) : undefined;
+    this.filePath = path.join(this.packageDir, props.filePath);
     this.dependencies = props.dependencies.filter(d => !props.exclude || !new RegExp(props.exclude).test(d.name));
     this.allowedLicenses = props.allowedLicenses.map(l => l.toLowerCase());
     this.dependenciesRoot = props.dependenciesRoot;
+    this.encodeVersions = props.encodeVersions ?? false;
 
     // without the generated notice content, this object is pretty much
     // useless, so lets generate those of the bat.
     this.attributions = this.attribute();
     const { licenses, versions } = this.render(this.attributions);
 
-    this.licenses = licenses;
+    this.content = licenses;
     this.versions = versions;
   }
 
@@ -96,32 +94,20 @@ export class Attributions {
   public validate(): ViolationsReport {
 
     const violations: Violation[] = [];
-    const relLicensesPath = path.relative(this.packageDir, this.licensesPath);
-    const relVersionsPath = this.versionsPath ? path.relative(this.packageDir, this.versionsPath) : undefined;
+    const relNoticePath = path.relative(this.packageDir, this.filePath);
 
-    const fix = () => this.flush();
+    const fix = () => this.flushAttributions();
 
-    const missingLicenses = !fs.existsSync(this.licensesPath);
-    const missingVersions = this.versionsPath && !fs.existsSync(this.versionsPath);
-    const licenses = missingLicenses ? undefined : fs.readFileSync(this.licensesPath, { encoding: 'utf-8' });
-    const versions = (missingVersions || !this.versionsPath) ? undefined : fs.readFileSync(this.versionsPath, { encoding: 'utf-8' });
-    const outdatedLicenses = licenses !== undefined && licenses !== this.licenses;
-    const outdatedVersions = versions !== undefined && versions !== this.versions;
+    const missing = !fs.existsSync(this.filePath);
+    const attributions = missing ? undefined : fs.readFileSync(this.filePath, { encoding: 'utf-8' });
+    const outdated = attributions !== undefined && attributions !== this.content;
 
-    if (missingLicenses) {
-      violations.push({ type: ViolationType.MISSING_LICENSES, message: `${relLicensesPath} is missing`, fix });
+    if (missing) {
+      violations.push({ type: ViolationType.MISSING_NOTICE, message: `${relNoticePath} is missing`, fix });
     }
 
-    if (outdatedLicenses) {
-      violations.push({ type: ViolationType.OUTDATED_LICENSES, message: `${relLicensesPath} is outdated`, fix });
-    }
-
-    if (missingVersions) {
-      violations.push({ type: ViolationType.MISSING_VERSIONS, message: `${relVersionsPath} is missing`, fix });
-    }
-
-    if (outdatedVersions) {
-      violations.push({ type: ViolationType.OUTDATED_VERSIONS, message: `${relVersionsPath} is outdated`, fix });
+    if (outdated) {
+      violations.push({ type: ViolationType.OUTDATED_ATTRIBUTIONS, message: `${relNoticePath} is outdated`, fix });
     }
 
     const invalidLicense: Violation[] = Array.from(this.attributions.values())
@@ -144,13 +130,22 @@ export class Attributions {
   }
 
   /**
-   * Flush the generated attributions files to disk.
+   * Flush the generated attributions file to disk.
    */
-  public flush() {
-    fs.writeFileSync(this.licensesPath, this.licenses);
-    if (this.versionsPath) {
-      fs.writeFileSync(this.versionsPath, this.versions);
+  public flushAttributions() {
+    fs.writeFileSync(this.filePath, this.content);
+    if (!this.encodeVersions) {
+      // in case the versions aren't encoded in the attribution file
+      // lets write them to a separate file
+      fs.writeFileSync(`${this.filePath}.versions.json`, this.versions);
     }
+  }
+
+  /**
+   * Flush the generated versions file to disk.
+   */
+  public flushVersions(dir: string) {
+    fs.writeFileSync(path.join(dir, `${path.basename(this.filePath)}.versions.json`), this.versions);
   }
 
   private render(attributions: Attribution[]): { licenses: string; versions: string } {
@@ -168,7 +163,7 @@ export class Attributions {
     const versions: { [key: string]: string[] } = {};
 
     for (const attr of ordered) {
-      const title = this.versionsPath ? attr.packageName : attr.packageFqn;
+      const title = this.encodeVersions ? attr.packageFqn : attr.packageName;
       content.push(`** ${title} - ${attr.url} | ${attr.licenses[0]}`);
 
       const versionsInUse = versions[attr.packageName] ?? [];
@@ -246,7 +241,7 @@ export class Attributions {
       const licenses = !info.licenses ? undefined : (Array.isArray(info.licenses) ? info.licenses : [info.licenses]);
 
       const baseUrl = `https://www.npmjs.com/package/${dep.name}`;
-      const url = this.versionsPath ? baseUrl : `${baseUrl}/v/${dep.version}`;
+      const url = this.encodeVersions ? `${baseUrl}/v/${dep.version}` : baseUrl;
 
       attributions.push({
         packageFqn: key,

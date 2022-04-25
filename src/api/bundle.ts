@@ -33,12 +33,12 @@ export interface BundleProps {
   readonly entryPoints?: string[];
 
   /**
-   * Path to the attribution licenses file to be created / validated.
+   * Path to attributions file that will be created / validated.
    * This path is relative to the package directory.
    *
    * @default 'THIRD_PARTY_LICENSES'
    */
-  readonly licensesFile?: string;
+  readonly attributionsFile?: string;
 
   /**
    * External packages that cannot be bundled.
@@ -75,23 +75,12 @@ export interface BundleProps {
   readonly test?: string;
 
   /**
-   * When set to true, activates the `versionsFile` property with a
-   * default of 'THIRD_PARTY_LICENSES'.
+   * When set to false, the attribution file will not contain package version information.
+   * Instead, package versions will be available in a separate `<attribution-file>.versions.json` file.
    *
    * @default false
    */
-  readonly attributeVersionsSeparately?: boolean;
-
-  /**
-   * Path to the attribution versions file to be created / validated.
-   * This path is relative to the package directory.
-   *
-   * If this property is set, dependency versions are left out of the
-   * licenses document configured by `licensesFile`, and outputed into this file instead.
-   *
-   * @default - versions are encoded inside the licenses file.
-   */
-  readonly versionsFile?: string;
+  readonly encodeVersions?: boolean;
 
   /**
    * Include inline source map in the bundle file.
@@ -165,8 +154,7 @@ export interface Externals {
 export class Bundle {
 
   private readonly manifest: any;
-  private readonly licensesFile: string;
-  private readonly versionsFile?: string;
+  private readonly noticePath: string;
 
   private readonly packageDir: string;
   private readonly entryPoints: Record<string, string>;
@@ -176,6 +164,7 @@ export class Bundle {
   private readonly dontAttribute?: string;
   private readonly test?: string;
   private readonly sourcemap: boolean;
+  private readonly encodeVersions: boolean;
 
   private _bundle?: esbuild.BuildResult;
   private _dependencies?: Package[];
@@ -186,12 +175,7 @@ export class Bundle {
   constructor(props: BundleProps) {
     this.packageDir = props.packageDir;
 
-    if (props.attributeVersionsSeparately === false && props.versionsFile) {
-      throw new Error('\'versionsFile\' cannot be set when \'excludeVersionsFromAttribution\' is false');
-    }
-
-    this.licensesFile = props.licensesFile ?? 'THIRD_PARTY_LICENSES';
-    this.versionsFile = props.versionsFile ?? (props.attributeVersionsSeparately ? 'THIRD_PARTY_VERSIONS' : undefined);
+    this.noticePath = props.attributionsFile ?? 'THIRD_PARTY_LICENSES';
     this.manifest = fs.readJsonSync(path.join(this.packageDir, 'package.json'));
     this.externals = props.externals ?? {};
     this.resources = props.resources ?? {};
@@ -199,6 +183,7 @@ export class Bundle {
     this.sourcemap = props.sourcemap ?? true;
     this.allowedLicenses = props.allowedLicenses ?? DEFAULT_ALLOWED_LICENSES;
     this.dontAttribute = props.dontAttribute;
+    this.encodeVersions = props.encodeVersions ?? false;
     this.entryPoints = {};
 
     const entryPoints = props.entryPoints ?? (this.manifest.main ? [this.manifest.main] : []);
@@ -309,6 +294,14 @@ export class Bundle {
 
     console.log('Writing bundle');
     const bundleDir = this.write();
+
+    if (!this.encodeVersions) {
+      // in case the versions aren't encoded in the attribution file
+      // lets write them to a separate file
+      console.log('Writing versions file');
+      this.attributions.flushVersions(bundleDir);
+    }
+
     try {
 
       if (this.test) {
@@ -360,12 +353,12 @@ export class Bundle {
       this._attributions = new Attributions({
         packageDir: this.packageDir,
         packageName: this.manifest.name,
-        licensesPath: this.licensesFile,
-        versionsPath: this.versionsFile,
+        filePath: this.noticePath,
         dependencies: this.dependencies,
         dependenciesRoot: this.dependenciesRoot,
         exclude: this.dontAttribute,
         allowedLicenses: this.allowedLicenses,
+        encodeVersions: this.encodeVersions,
       });
     }
     return this._attributions;

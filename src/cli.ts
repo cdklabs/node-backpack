@@ -17,9 +17,7 @@ async function buildCommands() {
     .option('resource', { type: 'array', nargs: 1, default: [], desc: 'List of resources that need to be explicitly copied to the bundle (example: node_modules/proxy-agent/contextify.js:bin/contextify.js)' })
     .option('dont-attribute', { type: 'string', desc: 'Dependencies matching this regular expressions wont be added to the attribution files' })
     .option('test', { type: 'string', desc: 'Validation command to sanity test the bundle after its created' })
-    .option('attribute-versions-separately', { type: 'boolean', desc: 'Attribute dependency versions information separately from the licenses file' })
-    .option('versions-file', { type: 'string', desc: 'File to write dependency versions information. Only applies if \'attribute-versions-separately\' is used' })
-    .option('licenses-file', { type: 'string', desc: 'File to write dependency licenses information. Defaults to \'THIRD_PARTY_LICENSES\'' })
+    .option('encode-versions', { type: 'boolean', default: false, desc: 'Encode dependency versions information inside the attribution document. If set to false, version information is stored in a separate file' })
     .command('validate', 'Validate the package is ready for bundling', args => args
       .option('fix', { type: 'boolean', default: false, alias: 'f', desc: 'Fix any fixable violations' }),
     )
@@ -71,7 +69,7 @@ async function buildCommands() {
     resources: resources,
     dontAttribute: argv['dont-attribute'],
     test: argv.test,
-    attributeVersionsSeparately: argv['attribute-versions-separately'],
+    encodeVersions: argv['encode-versions'],
   };
 
   const bundle = new Bundle(props);

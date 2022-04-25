@@ -25,15 +25,9 @@ export interface PackageOptions {
   readonly licenses?: string[];
 
   /**
-   * The 'THIRD_PARTY_LICENSES' file.
+   * Package notice file.
    */
-  readonly thirdPartyLicenses?: string;
-
-  /**
-   * The 'THIRD_PARTY_VERSIONS' file.
-   */
-  readonly thirdPartyVersions?: string;
-
+  readonly notice?: string;
 }
 
 /**
@@ -75,7 +69,7 @@ export class Package {
       'require("./bar");',
     ];
 
-    return new Package(dir, manifest, index, foo, bar, options.thirdPartyLicenses, options.thirdPartyVersions);
+    return new Package(dir, manifest, index, foo, bar, options.notice);
   }
 
   private readonly dependencies: Package[] = [];
@@ -86,8 +80,7 @@ export class Package {
     public readonly index: string[],
     public readonly foo: string[],
     public readonly bar: string[],
-    public readonly thirdPartyLicenses?: string,
-    public readonly thirdPartyVersions?: string) {
+    public readonly attributions?: string) {
 
     this.manifest.main = this.entrypoint;
   }
@@ -115,11 +108,8 @@ export class Package {
     fs.writeFileSync(path.join(this.dir, 'lib', 'foo.js'), this.foo.join('\n'));
     fs.writeFileSync(path.join(this.dir, 'lib', 'bar.js'), this.bar.join('\n'));
     fs.writeFileSync(path.join(this.dir, this.entrypoint), this.index.join('\n'));
-    if (this.thirdPartyLicenses) {
-      fs.writeFileSync(path.join(this.dir, 'THIRD_PARTY_LICENSES'), this.thirdPartyLicenses);
-    }
-    if (this.thirdPartyVersions) {
-      fs.writeFileSync(path.join(this.dir, 'THIRD_PARTY_VERSIONS'), this.thirdPartyVersions);
+    if (this.attributions) {
+      fs.writeFileSync(path.join(this.dir, 'THIRD_PARTY_LICENSES'), this.attributions);
     }
     for (const dep of this.dependencies) {
       dep.write();

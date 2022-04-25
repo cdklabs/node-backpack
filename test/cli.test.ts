@@ -1,3 +1,4 @@
+import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import { shell } from '../src/api/_shell';
@@ -5,11 +6,9 @@ import { Package } from './_package';
 
 test('validate', () => {
 
-  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'], circular: true });
+  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'], circular: true, notice: 'outdated' });
   const dep1 = pkg.addDependency({ name: 'dep1', licenses: ['INVALID'] });
   const dep2 = pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0', 'MIT'] });
-
-  pkg.thirdPartyLicenses = 'outdated';
 
   pkg.write();
   pkg.install();
@@ -28,7 +27,7 @@ test('validate', () => {
     const expected = new Set([
       `- invalid-license: Dependency ${dep1.name}@${dep1.version} has an invalid license: UNKNOWN`,
       `- multiple-license: Dependency ${dep2.name}@${dep2.version} has multiple licenses: Apache-2.0,MIT`,
-      '- outdated-licenses: THIRD_PARTY_LICENSES is outdated (fixable)',
+      '- outdated-attributions: THIRD_PARTY_LICENSES is outdated (fixable)',
       '- missing-resource: Unable to find resource (missing) relative to the package directory',
       '- circular-import: lib/bar.js -> lib/foo.js',
     ]);
@@ -63,12 +62,15 @@ test('write', () => {
   expect(fs.existsSync(path.join(bundleDir, '.git'))).toBeFalsy();
 
   const manifest = fs.readJSONSync(path.join(bundleDir, 'package.json'));
+  const entrypoint = fs.readFileSync(path.join(bundleDir, pkg.entrypoint), { encoding: 'utf-8' });
 
+  expect(entrypoint).toMatchSnapshot();
+  expect(Object.keys(manifest.devDependencies)).toEqual(['dep1', 'dep2']);
   expect(manifest.dependencies).toEqual({});
 
 });
 
-test('validate and fix', () => {
+test('pack', () => {
 
   const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
   pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
@@ -77,67 +79,81 @@ test('validate and fix', () => {
   pkg.write();
   pkg.install();
 
-  const run = (sub: string) => {
-    const command = [
-      whereami(),
-      '--entrypoint', pkg.entrypoint,
-      '--license', 'Apache-2.0',
-      '--license', 'MIT',
-      sub,
-    ].join(' ');
-    shell(command, { cwd: pkg.dir, quiet: true });
-  };
+  // we need to first fix all violations
+  // before we can pack
+  const fix = [
+    whereami(),
+    '--entrypoint', pkg.entrypoint,
+    '--license', 'Apache-2.0',
+    '--license', 'MIT',
+    'validate --fix',
+  ].join(' ');
+  shell(fix, { cwd: pkg.dir, quiet: true });
 
-  try {
-    run('pack');
-    throw new Error('Expected packing to fail before fixing');
-  } catch (e) {
-    // this should fix the fact we don't generate
-    // the project with the correct attributions
-    run('validate --fix');
-  }
-
-  run('pack');
-  const tarball = path.join(pkg.dir, `${pkg.name}-${pkg.version}.tgz`);
-  expect(fs.existsSync(tarball)).toBeTruthy();
-
-});
-
-test('pack', () => {
-
-  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
-  const dep1 = pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
-  const dep2 = pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0'] });
-
-  const attributions = [
-    'The consumer package includes the following third-party software/licensing:',
-    '',
-    `** ${dep1.name}@${dep1.version} - https://www.npmjs.com/package/${dep1.name}/v/${dep1.version} | MIT`,
-    '',
-    '----------------',
-    '',
-    `** ${dep2.name}@${dep2.version} - https://www.npmjs.com/package/${dep2.name}/v/${dep2.version} | Apache-2.0`,
-    '',
-    '----------------',
-    '',
-  ];
-
-  pkg.thirdPartyLicenses = attributions.join('\n');
-
-  pkg.write();
-  pkg.install();
-
-  const command = [
+  const pack = [
     whereami(),
     '--entrypoint', pkg.entrypoint,
     '--license', 'Apache-2.0',
     '--license', 'MIT',
     'pack',
   ].join(' ');
-  shell(command, { cwd: pkg.dir, quiet: true });
+  shell(pack, { cwd: pkg.dir, quiet: true });
 
   const tarball = path.join(pkg.dir, `${pkg.name}-${pkg.version}.tgz`);
-  expect(fs.existsSync(tarball)).toBeTruthy();
+
+  const workdir = fs.mkdtempSync(os.tmpdir());
+  shell(`npm install ${tarball}`, { cwd: workdir });
+
+  const installed = path.join(workdir, 'node_modules', pkg.name);
+  const attributions = fs.readFileSync(path.join(installed, 'THIRD_PARTY_LICENSES'), { encoding: 'utf-8' });
+  const versions = fs.readFileSync(path.join(installed, 'THIRD_PARTY_LICENSES.versions.json'), { encoding: 'utf-8' });
+
+  expect(attributions).toMatchSnapshot();
+  expect(versions).toMatchSnapshot();
+
+});
+
+test('pack with versions encoded in attributions', () => {
+
+  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
+  pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
+  pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0'] });
+
+  pkg.write();
+  pkg.install();
+
+  // we need to first fix all violations
+  // before we can pack
+  const fix = [
+    whereami(),
+    '--entrypoint', pkg.entrypoint,
+    '--encode-versions',
+    '--license', 'Apache-2.0',
+    '--license', 'MIT',
+    'validate --fix',
+  ].join(' ');
+  shell(fix, { cwd: pkg.dir, quiet: true });
+
+  const pack = [
+    whereami(),
+    '--entrypoint', pkg.entrypoint,
+    '--encode-versions',
+    '--license', 'Apache-2.0',
+    '--license', 'MIT',
+    'pack',
+  ].join(' ');
+  shell(pack, { cwd: pkg.dir, quiet: true });
+
+  const tarball = path.join(pkg.dir, `${pkg.name}-${pkg.version}.tgz`);
+
+  const workdir = fs.mkdtempSync(os.tmpdir());
+  shell(`npm install ${tarball}`, { cwd: workdir });
+
+  const installed = path.join(workdir, 'node_modules', pkg.name);
+  const attributions = fs.readFileSync(path.join(installed, 'THIRD_PARTY_LICENSES'), { encoding: 'utf-8' });
+
+  expect(fs.existsSync(path.join(installed, 'THIRD_PARTY_LICENSES.versions.json'))).toBeFalsy();
+  expect(attributions).toMatchSnapshot();
 
 });
 
