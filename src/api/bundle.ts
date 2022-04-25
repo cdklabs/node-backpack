@@ -266,6 +266,8 @@ export class Bundle {
 
     const target = options.target ?? this.packageDir;
 
+    fs.ensureDirSync(target);
+
     const report = this.validate();
     if (!report.success) {
       throw new Error(`Unable to pack due to validation errors.\n\n${report.summary}`);

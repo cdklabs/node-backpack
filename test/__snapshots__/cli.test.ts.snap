@@ -3,11 +3,11 @@
 exports[`pack 1`] = `
 "The consumer package includes the following third-party software/licensing:
 
-** dep1 - https://www.npmjs.com/package/dep1/v/0.0.1 | MIT
+** dep1 - https://www.npmjs.com/package/dep1 | MIT
 
 ----------------
 
-** dep2 - https://www.npmjs.com/package/dep2/v/0.0.1 | Apache-2.0
+** dep2 - https://www.npmjs.com/package/dep2 | Apache-2.0
 
 ----------------
 "

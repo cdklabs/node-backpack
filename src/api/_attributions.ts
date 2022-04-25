@@ -230,7 +230,7 @@ export class Attributions {
         packageFqn: key,
         packageName: dep.name,
         packageVersion: dep.version,
-        url: `https://www.npmjs.com/package/${dep.name}/v/${dep.version}`,
+        url: `https://www.npmjs.com/package/${dep.name}`,
         licenses: licenses ?? [],
         licenseText,
         noticeText,
