@@ -1,0 +1,110 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`validate and fix 1`] = `
+"The consumer package includes the following third-party software/licensing:
+
+** dep1@0.0.1 - https://www.npmjs.com/package/dep1/v/0.0.1 | MIT
+
+----------------
+
+** dep2@0.0.1 - https://www.npmjs.com/package/dep2/v/0.0.1 | Apache-2.0
+
+----------------
+"
+`;
+
+exports[`versions can be encoded separtely from licenses 1`] = `
+Object {
+  "dep1": Array [
+    "0.0.1",
+  ],
+  "dep2": Array [
+    "0.0.1",
+  ],
+}
+`;
+
+exports[`versions can be encoded separtely from licenses 2`] = `
+"The consumer package includes the following third-party software/licensing:
+
+** dep1 - https://www.npmjs.com/package/dep1 | MIT
+
+----------------
+
+** dep2 - https://www.npmjs.com/package/dep2 | Apache-2.0
+
+----------------
+"
+`;
+
+exports[`write 1`] = `
+"var __getOwnPropNames = Object.getOwnPropertyNames;
+var __commonJS = (cb, mod) => function __require() {
+  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+};
+
+// lib/foo.js
+var require_foo = __commonJS({
+  \\"lib/foo.js\\"() {
+    console.log(\\"hello from foo\\");
+  }
+});
+
+// lib/bar.js
+var require_bar = __commonJS({
+  \\"lib/bar.js\\"() {
+    console.log(\\"hello from bar\\");
+  }
+});
+
+// node_modules/dep1/lib/foo.js
+var require_foo2 = __commonJS({
+  \\"node_modules/dep1/lib/foo.js\\"() {
+    console.log(\\"hello from foo\\");
+  }
+});
+
+// node_modules/dep1/lib/bar.js
+var require_bar2 = __commonJS({
+  \\"node_modules/dep1/lib/bar.js\\"() {
+    console.log(\\"hello from bar\\");
+  }
+});
+
+// node_modules/dep1/lib/index.js
+var require_lib = __commonJS({
+  \\"node_modules/dep1/lib/index.js\\"() {
+    require_foo2();
+    require_bar2();
+  }
+});
+
+// node_modules/dep2/lib/foo.js
+var require_foo3 = __commonJS({
+  \\"node_modules/dep2/lib/foo.js\\"() {
+    console.log(\\"hello from foo\\");
+  }
+});
+
+// node_modules/dep2/lib/bar.js
+var require_bar3 = __commonJS({
+  \\"node_modules/dep2/lib/bar.js\\"() {
+    console.log(\\"hello from bar\\");
+  }
+});
+
+// node_modules/dep2/lib/index.js
+var require_lib2 = __commonJS({
+  \\"node_modules/dep2/lib/index.js\\"() {
+    require_foo3();
+    require_bar3();
+  }
+});
+
+// lib/index.js
+require_foo();
+require_bar();
+require_lib();
+require_lib2();
+"
+`;
