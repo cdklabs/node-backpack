@@ -75,14 +75,6 @@ export interface BundleProps {
   readonly test?: string;
 
   /**
-   * When set to false, the attribution file will not contain package version information.
-   * Instead, package versions will be available in a separate `<attribution-file>.versions.json` file.
-   *
-   * @default false
-   */
-  readonly encodeVersions?: boolean;
-
-  /**
    * Include inline source map in the bundle file.
    *
    * @default true
@@ -164,7 +156,6 @@ export class Bundle {
   private readonly dontAttribute?: string;
   private readonly test?: string;
   private readonly sourcemap: boolean;
-  private readonly encodeVersions: boolean;
 
   private _bundle?: esbuild.BuildResult;
   private _dependencies?: Package[];
@@ -183,7 +174,6 @@ export class Bundle {
     this.sourcemap = props.sourcemap ?? true;
     this.allowedLicenses = props.allowedLicenses ?? DEFAULT_ALLOWED_LICENSES;
     this.dontAttribute = props.dontAttribute;
-    this.encodeVersions = props.encodeVersions ?? false;
     this.entryPoints = {};
 
     const entryPoints = props.entryPoints ?? (this.manifest.main ? [this.manifest.main] : []);
@@ -295,12 +285,8 @@ export class Bundle {
     console.log('Writing bundle');
     const bundleDir = this.write();
 
-    if (!this.encodeVersions) {
-      // in case the versions aren't encoded in the attribution file
-      // lets write them to a separate file
-      console.log('Writing versions file');
-      this.attributions.flushVersions(bundleDir);
-    }
+    console.log('Writing versions file');
+    this.attributions.flushVersions(bundleDir);
 
     try {
 
@@ -358,7 +344,6 @@ export class Bundle {
         dependenciesRoot: this.dependenciesRoot,
         exclude: this.dontAttribute,
         allowedLicenses: this.allowedLicenses,
-        encodeVersions: this.encodeVersions,
       });
     }
     return this._attributions;

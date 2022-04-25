@@ -113,50 +113,6 @@ test('pack', () => {
 
 });
 
-test('pack with versions encoded in attributions', () => {
-
-  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
-  pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
-  pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0'] });
-
-  pkg.write();
-  pkg.install();
-
-  // we need to first fix all violations
-  // before we can pack
-  const fix = [
-    whereami(),
-    '--entrypoint', pkg.entrypoint,
-    '--encode-versions',
-    '--license', 'Apache-2.0',
-    '--license', 'MIT',
-    'validate --fix',
-  ].join(' ');
-  shell(fix, { cwd: pkg.dir, quiet: true });
-
-  const pack = [
-    whereami(),
-    '--entrypoint', pkg.entrypoint,
-    '--encode-versions',
-    '--license', 'Apache-2.0',
-    '--license', 'MIT',
-    'pack',
-  ].join(' ');
-  shell(pack, { cwd: pkg.dir, quiet: true });
-
-  const tarball = path.join(pkg.dir, `${pkg.name}-${pkg.version}.tgz`);
-
-  const workdir = fs.mkdtempSync(os.tmpdir());
-  shell(`npm install ${tarball}`, { cwd: workdir });
-
-  const installed = path.join(workdir, 'node_modules', pkg.name);
-  const attributions = fs.readFileSync(path.join(installed, 'THIRD_PARTY_LICENSES'), { encoding: 'utf-8' });
-
-  expect(fs.existsSync(path.join(installed, 'THIRD_PARTY_LICENSES.versions.json'))).toBeFalsy();
-  expect(attributions).toMatchSnapshot();
-
-});
-
 function whereami() {
   return path.join(path.join(__dirname, '..', 'bin', 'node-backpack'));
 }

@@ -43,12 +43,6 @@ export interface AttributionsProps {
    * @default - no exclusions.
    */
   readonly exclude?: string;
-  /**
-   * Encode package version information in the attribution file.
-   *
-   * @default false
-   */
-  readonly encodeVersions?: boolean;
 }
 
 /**
@@ -62,9 +56,8 @@ export class Attributions {
   private readonly allowedLicenses: string[];
   private readonly dependenciesRoot: string;
   private readonly filePath: string;
-  private readonly encodeVersions: boolean;
 
-  private readonly attributions: Attribution[];
+  private readonly attributions: Map<string, Attribution>;
   private readonly content: string;
   private readonly versions: string;
 
@@ -75,7 +68,6 @@ export class Attributions {
     this.dependencies = props.dependencies.filter(d => !props.exclude || !new RegExp(props.exclude).test(d.name));
     this.allowedLicenses = props.allowedLicenses.map(l => l.toLowerCase());
     this.dependenciesRoot = props.dependenciesRoot;
-    this.encodeVersions = props.encodeVersions ?? false;
 
     // without the generated notice content, this object is pretty much
     // useless, so lets generate those of the bat.
@@ -134,11 +126,6 @@ export class Attributions {
    */
   public flushAttributions() {
     fs.writeFileSync(this.filePath, this.content);
-    if (!this.encodeVersions) {
-      // in case the versions aren't encoded in the attribution file
-      // lets write them to a separate file
-      fs.writeFileSync(`${this.filePath}.versions.json`, this.versions);
-    }
   }
 
   /**
@@ -148,11 +135,11 @@ export class Attributions {
     fs.writeFileSync(path.join(dir, `${path.basename(this.filePath)}.versions.json`), this.versions);
   }
 
-  private render(attributions: Attribution[]): { licenses: string; versions: string } {
+  private render(attributions: Map<string, Attribution>): { licenses: string; versions: string } {
 
     const content = [];
 
-    if (attributions.length > 0) {
+    if (attributions.size > 0) {
       content.push(`The ${this.packageName} package includes the following third-party software/licensing:`);
       content.push('');
     }
@@ -163,8 +150,7 @@ export class Attributions {
     const versions: { [key: string]: string[] } = {};
 
     for (const attr of ordered) {
-      const title = this.encodeVersions ? attr.packageFqn : attr.packageName;
-      content.push(`** ${title} - ${attr.url} | ${attr.licenses[0]}`);
+      content.push(`** ${attr.packageName} - ${attr.url} | ${attr.licenses[0]}`);
 
       const versionsInUse = versions[attr.packageName] ?? [];
       versionsInUse.push(attr.packageVersion);
@@ -190,13 +176,13 @@ export class Attributions {
 
   }
 
-  private attribute(): Attribution[] {
+  private attribute(): Map<string, Attribution> {
 
     if (this.dependencies.length === 0) {
-      return [];
+      return new Map();
     }
 
-    const attributions: Attribution[] = [];
+    const attributions: Map<string, Attribution> = new Map();
 
     const pkg = (d: Package) => `${d.name}@${d.version}`;
 
@@ -240,14 +226,11 @@ export class Attributions {
       // to always be an array.
       const licenses = !info.licenses ? undefined : (Array.isArray(info.licenses) ? info.licenses : [info.licenses]);
 
-      const baseUrl = `https://www.npmjs.com/package/${dep.name}`;
-      const url = this.encodeVersions ? `${baseUrl}/v/${dep.version}` : baseUrl;
-
-      attributions.push({
+      attributions.set(key, {
         packageFqn: key,
         packageName: dep.name,
         packageVersion: dep.version,
-        url,
+        url: `https://www.npmjs.com/package/${dep.name}/v/${dep.version}`,
         licenses: licenses ?? [],
         licenseText,
         noticeText,

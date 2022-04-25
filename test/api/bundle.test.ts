@@ -102,41 +102,6 @@ test('pack', () => {
 
 });
 
-test('pack with versions encoded in attributions', () => {
-
-  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
-  pkg.addDependency({ name: 'dep1', licenses: ['MIT'] });
-  pkg.addDependency({ name: 'dep2', licenses: ['Apache-2.0'] });
-
-  pkg.write();
-  pkg.install();
-
-  const bundle = new Bundle({
-    packageDir: pkg.dir,
-    entryPoints: [pkg.entrypoint],
-    allowedLicenses: ['Apache-2.0', 'MIT'],
-    encodeVersions: true,
-  });
-
-  // we need to first fix all violations
-  // before we can pack
-  bundle.validate({ fix: true });
-
-  bundle.pack();
-
-  const tarball = path.join(pkg.dir, `${pkg.name}-${pkg.version}.tgz`);
-
-  const workdir = fs.mkdtempSync(os.tmpdir());
-  shell(`npm install ${tarball}`, { cwd: workdir });
-
-  const installed = path.join(workdir, 'node_modules', pkg.name);
-  const attributions = fs.readFileSync(path.join(installed, 'THIRD_PARTY_LICENSES'), { encoding: 'utf-8' });
-
-  expect(fs.existsSync(path.join(installed, 'THIRD_PARTY_LICENSES.versions.json'))).toBeFalsy();
-  expect(attributions).toMatchSnapshot();
-
-});
-
 test('write ignores only .git and node_modules directories', () => {
 
   const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
