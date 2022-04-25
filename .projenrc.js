@@ -36,6 +36,4 @@ project.tsconfig.compilerOptions.lib.push('dom');
 // needed for CLI tests to run
 project.testTask.prependSpawn(project.compileTask);
 
-project.addFields({ private: true });
-
 project.synth();
