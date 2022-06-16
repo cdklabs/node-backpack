@@ -40,13 +40,13 @@
     "jest-junit": "^13",
     "json-schema": "^0.4.0",
     "npm-check-updates": "^12",
-    "projen": "^0.58.12",
+    "projen": "^0.58.14",
     "standard-version": "^9",
     "ts-jest": "^27",
     "typescript": "^4.7.3"
   },
   "dependencies": {
-    "esbuild": "^0.14.43",
+    "esbuild": "^0.14.44",
     "fs-extra": "^10.1.0",
     "license-checker": "^25.0.1",
     "madge": "^5.0.1",
