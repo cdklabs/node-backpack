@@ -1,5 +1,9 @@
-import { typescript } from 'projen';
-const project = new typescript.TypeScriptProject({
+import { CdklabsTypeScriptProject } from 'cdklabs-projen-project-types';
+
+const project = new CdklabsTypeScriptProject({
+  setNodeEngineVersion: false,
+  stability: 'stable',
+  private: false,
   name: 'node-backpack',
   projenrcTs: true,
   defaultReleaseBranch: 'main',
@@ -20,11 +24,6 @@ const project = new typescript.TypeScriptProject({
   bin: {
     'node-backpack': 'bin/node-backpack',
   },
-  autoApproveOptions: {
-    allowedUsernames: ['cdklabs-automation'],
-    secret: 'GITHUB_TOKEN',
-  },
-  autoApproveUpgrades: true,
 });
 
 project.gitignore.exclude('.vscode/');
