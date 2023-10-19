@@ -32,8 +32,8 @@
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^27.5.2",
-    "@types/license-checker": "^25.0.4",
-    "@types/madge": "^5.0.1",
+    "@types/license-checker": "^25.0.5",
+    "@types/madge": "^5.0.2",
     "@types/node": "^16",
     "@typescript-eslint/eslint-plugin": "^6",
     "@typescript-eslint/parser": "^6",
