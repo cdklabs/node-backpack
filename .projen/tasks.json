@@ -229,10 +229,7 @@
       },
       "steps": [
         {
-          "exec": "yarn upgrade npm-check-updates"
-        },
-        {
-          "exec": "npm-check-updates --upgrade --target=minor --peer --dep=prod,peer --filter=esbuild,fs-extra,license-checker,madge,shlex,yargs"
+          "exec": "npx npm-check-updates@latest --upgrade --target=minor --peer --dep=prod,peer --filter=esbuild,fs-extra,license-checker,madge,shlex,yargs"
         },
         {
           "exec": "yarn install --check-files"
@@ -256,10 +253,7 @@
       },
       "steps": [
         {
-          "exec": "yarn upgrade npm-check-updates"
-        },
-        {
-          "exec": "npm-check-updates --upgrade --target=latest --peer --dep=dev,peer,prod,optional --filter=cdklabs-projen-project-types,projen"
+          "exec": "npx npm-check-updates@latest --upgrade --target=latest --peer --dep=dev,peer,prod,optional --filter=cdklabs-projen-project-types,projen"
         },
         {
           "exec": "yarn install --check-files"
@@ -283,10 +277,7 @@
       },
       "steps": [
         {
-          "exec": "yarn upgrade npm-check-updates"
-        },
-        {
-          "exec": "npm-check-updates --upgrade --target=minor --peer --dep=dev --filter=@types/fs-extra,@types/jest,@types/license-checker,@types/madge,@types/node,@typescript-eslint/eslint-plugin,@typescript-eslint/parser,cdklabs-projen-project-types,constructs,eslint-import-resolver-typescript,eslint-plugin-import,eslint,jest,jest-junit,npm-check-updates,projen,standard-version,ts-jest,ts-node,typescript"
+          "exec": "npx npm-check-updates@latest --upgrade --target=minor --peer --dep=dev --filter=@types/fs-extra,@types/jest,@types/license-checker,@types/madge,@types/node,@typescript-eslint/eslint-plugin,@typescript-eslint/parser,cdklabs-projen-project-types,constructs,eslint-import-resolver-typescript,eslint-plugin-import,eslint,jest,jest-junit,npm-check-updates,projen,standard-version,ts-jest,ts-node,typescript"
         },
         {
           "exec": "yarn install --check-files"
