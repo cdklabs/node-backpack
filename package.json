@@ -1,5 +1,9 @@
 {
   "name": "node-backpack",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cdklabs/node-backpack.git"
+  },
   "bin": {
     "node-backpack": "bin/node-backpack"
   },
@@ -38,7 +42,7 @@
     "@types/node": "^18",
     "@typescript-eslint/eslint-plugin": "^6",
     "@typescript-eslint/parser": "^6",
-    "cdklabs-projen-project-types": "^0.1.195",
+    "cdklabs-projen-project-types": "^0.1.196",
     "constructs": "^10.0.0",
     "eslint": "^8",
     "eslint-import-resolver-typescript": "^2.7.1",
