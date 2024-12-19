@@ -1,0 +1,98 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`pack 1`] = `
+"The consumer package includes the following third-party software/licensing:
+
+** dep1 - https://www.npmjs.com/package/dep1 | MIT
+
+----------------
+
+** dep2 - https://www.npmjs.com/package/dep2 | Apache-2.0
+
+----------------
+"
+`;
+
+exports[`pack 2`] = `
+"{
+  \\"dep1\\": [
+    \\"0.0.1\\"
+  ],
+  \\"dep2\\": [
+    \\"0.0.1\\"
+  ]
+}"
+`;
+
+exports[`write 1`] = `
+"var __getOwnPropNames = Object.getOwnPropertyNames;
+var __commonJS = (cb, mod) => function __require() {
+  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+};
+
+// lib/foo.js
+var require_foo = __commonJS({
+  \\"lib/foo.js\\"() {
+    console.log(\\"hello from foo\\");
+  }
+});
+
+// lib/bar.js
+var require_bar = __commonJS({
+  \\"lib/bar.js\\"() {
+    console.log(\\"hello from bar\\");
+  }
+});
+
+// node_modules/dep1/lib/foo.js
+var require_foo2 = __commonJS({
+  \\"node_modules/dep1/lib/foo.js\\"() {
+    console.log(\\"hello from foo\\");
+  }
+});
+
+// node_modules/dep1/lib/bar.js
+var require_bar2 = __commonJS({
+  \\"node_modules/dep1/lib/bar.js\\"() {
+    console.log(\\"hello from bar\\");
+  }
+});
+
+// node_modules/dep1/lib/index.js
+var require_lib = __commonJS({
+  \\"node_modules/dep1/lib/index.js\\"() {
+    require_foo2();
+    require_bar2();
+  }
+});
+
+// node_modules/dep2/lib/foo.js
+var require_foo3 = __commonJS({
+  \\"node_modules/dep2/lib/foo.js\\"() {
+    console.log(\\"hello from foo\\");
+  }
+});
+
+// node_modules/dep2/lib/bar.js
+var require_bar3 = __commonJS({
+  \\"node_modules/dep2/lib/bar.js\\"() {
+    console.log(\\"hello from bar\\");
+  }
+});
+
+// node_modules/dep2/lib/index.js
+var require_lib2 = __commonJS({
+  \\"node_modules/dep2/lib/index.js\\"() {
+    require_foo3();
+    require_bar3();
+  }
+});
+
+// lib/index.js
+require_foo();
+require_bar();
+require_lib();
+require_lib2();
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiZm9vLmpzIiwgImJhci5qcyIsICIuLi9ub2RlX21vZHVsZXMvZGVwMS9saWIvZm9vLmpzIiwgIi4uL25vZGVfbW9kdWxlcy9kZXAxL2xpYi9iYXIuanMiLCAiLi4vbm9kZV9tb2R1bGVzL2RlcDEvbGliL2luZGV4LmpzIiwgIi4uL25vZGVfbW9kdWxlcy9kZXAyL2xpYi9mb28uanMiLCAiLi4vbm9kZV9tb2R1bGVzL2RlcDIvbGliL2Jhci5qcyIsICIuLi9ub2RlX21vZHVsZXMvZGVwMi9saWIvaW5kZXguanMiLCAiaW5kZXguanMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnNvbGUubG9nKFwiaGVsbG8gZnJvbSBmb29cIik7IiwgImNvbnNvbGUubG9nKFwiaGVsbG8gZnJvbSBiYXJcIik7IiwgImNvbnNvbGUubG9nKFwiaGVsbG8gZnJvbSBmb29cIik7IiwgImNvbnNvbGUubG9nKFwiaGVsbG8gZnJvbSBiYXJcIik7IiwgInJlcXVpcmUoXCIuL2Zvb1wiKTtcbnJlcXVpcmUoXCIuL2JhclwiKTsiLCAiY29uc29sZS5sb2coXCJoZWxsbyBmcm9tIGZvb1wiKTsiLCAiY29uc29sZS5sb2coXCJoZWxsbyBmcm9tIGJhclwiKTsiLCAicmVxdWlyZShcIi4vZm9vXCIpO1xucmVxdWlyZShcIi4vYmFyXCIpOyIsICJyZXF1aXJlKFwiLi9mb29cIik7XG5yZXF1aXJlKFwiLi9iYXJcIik7XG5yZXF1aXJlKFwiZGVwMVwiKTtcbnJlcXVpcmUoXCJkZXAyXCIpOyJdLAogICJtYXBwaW5ncyI6ICI7Ozs7OztBQUFBO0FBQUE7QUFBQSxZQUFRLElBQUksZ0JBQWdCO0FBQUE7QUFBQTs7O0FDQTVCO0FBQUE7QUFBQSxZQUFRLElBQUksZ0JBQWdCO0FBQUE7QUFBQTs7O0FDQTVCO0FBQUE7QUFBQSxZQUFRLElBQUksZ0JBQWdCO0FBQUE7QUFBQTs7O0FDQTVCO0FBQUE7QUFBQSxZQUFRLElBQUksZ0JBQWdCO0FBQUE7QUFBQTs7O0FDQTVCO0FBQUE7QUFBQTtBQUNBO0FBQUE7QUFBQTs7O0FDREE7QUFBQTtBQUFBLFlBQVEsSUFBSSxnQkFBZ0I7QUFBQTtBQUFBOzs7QUNBNUI7QUFBQTtBQUFBLFlBQVEsSUFBSSxnQkFBZ0I7QUFBQTtBQUFBOzs7QUNBNUI7QUFBQTtBQUFBO0FBQ0E7QUFBQTtBQUFBOzs7QUNEQTtBQUNBO0FBQ0E7QUFDQTsiLAogICJuYW1lcyI6IFtdCn0K
+"
+`;
