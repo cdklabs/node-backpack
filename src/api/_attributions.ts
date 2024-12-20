@@ -46,7 +46,7 @@ export interface AttributionsProps {
 }
 
 /**
- * `Attributions` represents an attributions file containing third-party license information.
+ * `Attributions` represents attributions files containing third-party license information.
  */
 export class Attributions {
 
@@ -59,6 +59,7 @@ export class Attributions {
 
   private readonly attributions: Map<string, Attribution>;
   private readonly content: string;
+  private readonly versions: string;
 
   constructor(props: AttributionsProps) {
     this.packageDir = props.packageDir;
@@ -70,8 +71,11 @@ export class Attributions {
 
     // without the generated notice content, this object is pretty much
     // useless, so lets generate those of the bat.
-    this.attributions = this.generateAttributions();
-    this.content = this.render(this.attributions);
+    this.attributions = this.attribute();
+    const { licenses, versions } = this.render(this.attributions);
+
+    this.content = licenses;
+    this.versions = versions;
   }
 
   /**
@@ -84,7 +88,7 @@ export class Attributions {
     const violations: Violation[] = [];
     const relNoticePath = path.relative(this.packageDir, this.filePath);
 
-    const fix = () => this.flush();
+    const fix = () => this.flushAttributions();
 
     const missing = !fs.existsSync(this.filePath);
     const attributions = missing ? undefined : fs.readFileSync(this.filePath, { encoding: 'utf-8' });
@@ -100,15 +104,15 @@ export class Attributions {
 
     const invalidLicense: Violation[] = Array.from(this.attributions.values())
       .filter(a => a.licenses.length === 1 && !this.allowedLicenses.includes(a.licenses[0].toLowerCase()))
-      .map(a => ({ type: ViolationType.INVALID_LICENSE, message: `Dependency ${a.package} has an invalid license: ${a.licenses[0]}` }));
+      .map(a => ({ type: ViolationType.INVALID_LICENSE, message: `Dependency ${a.packageFqn} has an invalid license: ${a.licenses[0]}` }));
 
     const noLicense: Violation[] = Array.from(this.attributions.values())
       .filter(a => a.licenses.length === 0)
-      .map(a => ({ type: ViolationType.NO_LICENSE, message: `Dependency ${a.package} has no license` }));
+      .map(a => ({ type: ViolationType.NO_LICENSE, message: `Dependency ${a.packageFqn} has no license` }));
 
     const multiLicense: Violation[] = Array.from(this.attributions.values())
       .filter(a => a.licenses.length > 1)
-      .map(a => ({ type: ViolationType.MULTIPLE_LICENSE, message: `Dependency ${a.package} has multiple licenses: ${a.licenses}` }));
+      .map(a => ({ type: ViolationType.MULTIPLE_LICENSE, message: `Dependency ${a.packageFqn} has multiple licenses: ${a.licenses}` }));
 
     violations.push(...invalidLicense);
     violations.push(...noLicense);
@@ -118,13 +122,20 @@ export class Attributions {
   }
 
   /**
-   * Flush the generated notice file to disk.
+   * Flush the generated attributions file to disk.
    */
-  public flush() {
+  public flushAttributions() {
     fs.writeFileSync(this.filePath, this.content);
   }
 
-  private render(attributions: Map<string, Attribution>): string {
+  /**
+   * Flush the generated versions file to disk.
+   */
+  public flushVersions(dir: string) {
+    fs.writeFileSync(path.join(dir, `${path.basename(this.filePath)}.versions.json`), this.versions);
+  }
+
+  private render(attributions: Map<string, Attribution>): { licenses: string; versions: string } {
 
     const content = [];
 
@@ -134,10 +145,16 @@ export class Attributions {
     }
 
     // sort the attributions so the file doesn't change due to ordering issues
-    const ordered = Array.from(attributions.values()).sort((a1, a2) => a1.package.localeCompare(a2.package));
+    const ordered = Array.from(attributions.values()).sort((a1, a2) => a1.packageFqn.localeCompare(a2.packageFqn));
+
+    const versions: { [key: string]: string[] } = {};
 
     for (const attr of ordered) {
-      content.push(`** ${attr.package} - ${attr.url} | ${attr.licenses[0]}`);
+      content.push(`** ${attr.packageName} - ${attr.url} | ${attr.licenses[0]}`);
+
+      const versionsInUse = versions[attr.packageName] ?? [];
+      versionsInUse.push(attr.packageVersion);
+      versions[attr.packageName] = versionsInUse;
 
       // prefer notice over license
       if (attr.noticeText) {
@@ -148,15 +165,18 @@ export class Attributions {
       content.push(ATTRIBUTION_SEPARATOR);
     }
 
-    return content
+    return {
+      licenses: content
       // since we are embedding external files, those can different line
       // endings, so we standardize to LF.
-      .map(l => l.replace(/\r\n/g, '\n'))
-      .join('\n');
+        .map(l => l.replace(/\r\n/g, '\n'))
+        .join('\n'),
+      versions: JSON.stringify(versions, null, 2),
+    };
 
   }
 
-  private generateAttributions(): Map<string, Attribution> {
+  private attribute(): Map<string, Attribution> {
 
     if (this.dependencies.length === 0) {
       return new Map();
@@ -207,8 +227,10 @@ export class Attributions {
       const licenses = !info.licenses ? undefined : (Array.isArray(info.licenses) ? info.licenses : [info.licenses]);
 
       attributions.set(key, {
-        package: key,
-        url: `https://www.npmjs.com/package/${dep.name}/v/${dep.version}`,
+        packageFqn: key,
+        packageName: dep.name,
+        packageVersion: dep.version,
+        url: `https://www.npmjs.com/package/${dep.name}`,
         licenses: licenses ?? [],
         licenseText,
         noticeText,
@@ -225,9 +247,17 @@ export class Attributions {
  */
 interface Attribution {
   /**
-   * Attributed package (name + version)
+   * Attributed package fqn (name + version).
    */
-  readonly package: string;
+  readonly packageFqn: string;
+  /**
+   * Attributed package name.
+   */
+  readonly packageName: string;
+  /**
+   * Attributed package version.
+   */
+  readonly packageVersion: string;
   /**
    * URL to the package.
    */
