@@ -73,6 +73,13 @@ export interface BundleProps {
    * @default - no check.
    */
   readonly test?: string;
+
+  /**
+   * Include inline source map in the bundle file.
+   *
+   * @default true
+   */
+  readonly sourcemap?: boolean;
 }
 
 /**
@@ -148,6 +155,7 @@ export class Bundle {
   private readonly allowedLicenses: string[];
   private readonly dontAttribute?: string;
   private readonly test?: string;
+  private readonly sourcemap: boolean;
 
   private _bundle?: esbuild.BuildResult;
   private _dependencies?: Package[];
@@ -157,11 +165,13 @@ export class Bundle {
 
   constructor(props: BundleProps) {
     this.packageDir = props.packageDir;
+
     this.noticePath = props.attributionsFile ?? 'THIRD_PARTY_LICENSES';
     this.manifest = fs.readJsonSync(path.join(this.packageDir, 'package.json'));
     this.externals = props.externals ?? {};
     this.resources = props.resources ?? {};
     this.test = props.test;
+    this.sourcemap = props.sourcemap ?? true;
     this.allowedLicenses = props.allowedLicenses ?? DEFAULT_ALLOWED_LICENSES;
     this.dontAttribute = props.dontAttribute;
     this.entryPoints = {};
@@ -256,6 +266,8 @@ export class Bundle {
 
     const target = options.target ?? this.packageDir;
 
+    fs.ensureDirSync(target);
+
     const report = this.validate();
     if (!report.success) {
       throw new Error(`Unable to pack due to validation errors.\n\n${report.summary}`);
@@ -274,6 +286,10 @@ export class Bundle {
 
     console.log('Writing bundle');
     const bundleDir = this.write();
+
+    console.log('Writing versions file');
+    this.attributions.flushVersions(bundleDir);
+
     try {
 
       if (this.test) {
@@ -394,7 +410,7 @@ export class Bundle {
       bundle: true,
       target: 'node12',
       platform: 'node',
-      sourcemap: 'inline',
+      sourcemap: this.sourcemap ? 'inline' : false,
       metafile: true,
       treeShaking: true,
       absWorkingDir: this.packageDir,
