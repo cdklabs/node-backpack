@@ -209,6 +209,9 @@
           "method"
         ]
       }
+    ],
+    "no-console": [
+      "off"
     ]
   },
   "overrides": [

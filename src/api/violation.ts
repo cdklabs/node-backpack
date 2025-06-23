@@ -63,8 +63,8 @@ export interface Violation {
  * Report encapsulating a list of violations.
  */
 export class ViolationsReport {
-
-  constructor(private readonly _violations: Violation[]) {}
+  constructor(private readonly _violations: Violation[]) {
+  }
 
   /**
    * The list of violations.
@@ -92,5 +92,4 @@ export class ViolationsReport {
     }
     return summary.join('\n');
   }
-
 }
