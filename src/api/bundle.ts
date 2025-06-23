@@ -4,7 +4,8 @@ import * as esbuild from 'esbuild';
 import * as fs from 'fs-extra';
 import { Attributions } from './_attributions';
 import { shell } from './_shell';
-import { Violation, ViolationType, ViolationsReport } from './violation';
+import type { Violation } from './violation';
+import { ViolationType, ViolationsReport } from './violation';
 
 const DEFAULT_ALLOWED_LICENSES = [
   'Apache-2.0',
@@ -13,6 +14,7 @@ const DEFAULT_ALLOWED_LICENSES = [
   'ISC',
   'BSD-2-Clause',
   '0BSD',
+  'MIT OR Apache-2.0',
 ];
 
 /**
@@ -73,6 +75,51 @@ export interface BundleProps {
    * @default - no check.
    */
   readonly test?: string;
+
+  /**
+   * Include a sourcemap in the bundle.
+   *
+   * @default "inline"
+   */
+  readonly sourcemap?: 'linked' | 'inline' | 'external' | 'both';
+
+  /**
+   * Minifies the bundled code.
+   *
+   * @default false
+   */
+  readonly minify?: boolean;
+
+  /**
+   * Removes whitespace from the code.
+   * This is enabled by default when `minify` is used.
+   *
+   * @default false
+   */
+  readonly minifyWhitespace?: boolean;
+
+  /**
+   * Renames local variables to be shorter.
+   * This is enabled by default when `minify` is used.
+   *
+   * @default false
+   */
+  readonly minifyIdentifiers?: boolean;
+
+  /**
+   * Rewrites syntax to a more compact format.
+   * This is enabled by default when `minify` is used.
+   *
+   * @default false
+   */
+  readonly minifySyntax?: boolean;
+
+  /**
+   * Write the metafile into this location.
+   *
+   * @default - no metafile is written
+   */
+  readonly metafile?: string;
 }
 
 /**
@@ -137,7 +184,6 @@ export interface Externals {
  * Bundle class to validate and pack nodejs bundles.
  */
 export class Bundle {
-
   private readonly manifest: any;
   private readonly noticePath: string;
 
@@ -148,6 +194,12 @@ export class Bundle {
   private readonly allowedLicenses: string[];
   private readonly dontAttribute?: string;
   private readonly test?: string;
+  private readonly sourcemap?: 'linked' | 'inline' | 'external' | 'both';
+  private readonly minify?: boolean;
+  private readonly minifyWhitespace?: boolean;
+  private readonly minifyIdentifiers?: boolean;
+  private readonly minifySyntax?: boolean;
+  private readonly metafile?: string;
 
   private _bundle?: esbuild.BuildResult;
   private _dependencies?: Package[];
@@ -165,6 +217,12 @@ export class Bundle {
     this.allowedLicenses = props.allowedLicenses ?? DEFAULT_ALLOWED_LICENSES;
     this.dontAttribute = props.dontAttribute;
     this.entryPoints = {};
+    this.sourcemap = props.sourcemap;
+    this.minify = props.minify;
+    this.minifyWhitespace = props.minifyWhitespace;
+    this.minifyIdentifiers = props.minifyIdentifiers;
+    this.minifySyntax = props.minifySyntax;
+    this.metafile = props.metafile;
 
     const entryPoints = props.entryPoints ?? (this.manifest.main ? [this.manifest.main] : []);
 
@@ -190,7 +248,6 @@ export class Bundle {
    * returned report and act accordingly.
    */
   public validate(options: BundleValidateOptions = {}): ViolationsReport {
-
     const fix = options.fix ?? false;
 
     // first validate
@@ -221,7 +278,6 @@ export class Bundle {
    * Returns the temp directory location.
    */
   public write(): string {
-
     const target = fs.mkdtempSync(path.join(os.tmpdir(), 'bundle-write-'));
 
     // we definitely don't need these directories in the package
@@ -253,7 +309,6 @@ export class Bundle {
    * Returns the location of the tarball.
    */
   public pack(options: BundlePackOptions = {}): string {
-
     const target = options.target ?? this.packageDir;
 
     const report = this.validate();
@@ -275,10 +330,9 @@ export class Bundle {
     console.log('Writing bundle');
     const bundleDir = this.write();
     try {
-
       if (this.test) {
         const command = `${path.join(bundleDir, this.test)}`;
-        console.log(`Running santiy test: ${command}`);
+        console.log(`Running sanity test: ${command}`);
         shell(command, { cwd: bundleDir });
       }
 
@@ -307,7 +361,7 @@ export class Bundle {
     }
     const inputs = Object.keys(this.bundle.metafile!.inputs);
     const packages = new Set(Array.from(inputs).map(i => this.closestPackagePath(path.join(this.packageDir, i))));
-    this._dependencies = Array.from(packages).map(p => this.createPackage(p)).filter(d => d.name !== this.manifest.name);
+    this._dependencies = Array.from(packages).map(p => this.createPackage(p)).filter(d => d.name !== undefined && d.name !== this.manifest.name);
     return this._dependencies;
   }
 
@@ -336,7 +390,6 @@ export class Bundle {
   }
 
   private findExternalDependencyVersion(name: string): string {
-
     const versions = new Set<string>();
 
     // external dependencies will not exist in the dependencies list
@@ -365,11 +418,10 @@ export class Bundle {
       throw new Error(`Multiple versions detected for external dependency: ${name} (${Array.from(versions).join(',')})`);
     }
 
-    return versions.values().next().value;
+    return versions.values().next().value!;
   }
 
   private closestPackagePath(fdp: string): string {
-
     if (fs.existsSync(path.join(fdp, 'package.json'))) {
       return fdp;
     }
@@ -388,14 +440,17 @@ export class Bundle {
   }
 
   private esbuild(): esbuild.BuildResult {
-
     const bundle = esbuild.buildSync({
       entryPoints: this.entryPoints,
       bundle: true,
-      target: 'node12',
+      target: 'node18',
       platform: 'node',
-      sourcemap: 'inline',
-      metafile: true,
+      sourcemap: this.sourcemap,
+      metafile: true, // this is always required for some of our validation rules
+      minify: this.minify,
+      minifyWhitespace: this.minifyWhitespace,
+      minifyIdentifiers: this.minifyIdentifiers,
+      minifySyntax: this.minifySyntax,
       treeShaking: true,
       absWorkingDir: this.packageDir,
       external: [...(this.externals.dependencies ?? []), ...(this.externals.optionalDependencies ?? [])],
@@ -403,6 +458,11 @@ export class Bundle {
       outdir: this.packageDir,
       allowOverwrite: true,
     });
+
+    // Write metafile only when requested
+    if (this.metafile) {
+      fs.writeFileSync(this.metafile, JSON.stringify(bundle.metafile, null, 2));
+    }
 
     if (bundle.warnings.length > 0) {
       // esbuild warnings are usually important, lets try to be strict here.
@@ -453,7 +513,6 @@ export class Bundle {
   }
 
   private addExternals(manifest: any) {
-
     // external dependencies should be specified as runtime dependencies
     for (const external of this.externals.dependencies ?? []) {
       const version = this.findExternalDependencyVersion(external);
@@ -467,7 +526,6 @@ export class Bundle {
       manifest.optionalDependencies = manifest.optionalDependencies ?? {};
       manifest.optionalDependencies[external] = version;
     }
-
   }
 
   private removeDependencies(manifest: any) {
@@ -498,7 +556,6 @@ export class Bundle {
 }
 
 function longestCommonParent(paths: string[]) {
-
   function _longestCommonParent(p1: string, p2: string): string {
     const dirs1 = p1.split(path.sep);
     const dirs2 = p2.split(path.sep);
