@@ -61,13 +61,13 @@ We considered two other alternatives before eventually going down this route:
 Aside from a shrinkwrap file, NPM also offers a feature called `bundledDependencies`
 to vendor in your dependencies inside the `node_modules` directory of your package.
 
-> See [bundledDependencies](https://docs.npmjs.com/cli/v8/configuring-npm/package-json#bundleddependencies)
+> See [bundledDependencies](https://docs.npmjs.com/cli/v8/configuring-npm/package-json#bundledependencies)
 
 While this approach seems to be supported across all package managers, that won't be
 the case for Yarn 2.x and above, or more concretely,
 for the [Plug'n'Play](https://yarnpkg.com/features/pnp) feature.
 
-> See [dont use bundled dependencies](https://yarnpkg.com/getting-started/migration#dont-use-bundledependencies)
+> See [dont use bundled dependencies](https://yarnpkg.com/migration/guide#dont-use-bundledependencies)
 
 ### Static Binaries
 
