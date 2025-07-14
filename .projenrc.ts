@@ -21,12 +21,29 @@ const project = new CdklabsTypeScriptProject({
     'fs-extra',
     'shlex',
   ],
+  majorVersion: 1,
   bin: {
     'node-backpack': 'bin/node-backpack',
   },
 });
 
+project.addDevDeps(
+  'jest-junit@^16',
+  'prettier@^2.8',
+);
+project.npmignore?.addPatterns(
+  // don't inlcude config files
+  '.eslintrc.js',
+  // As a rule we don't include .ts sources in the NPM package
+  '*.ts',
+  '!*.d.ts',
+  'CONTRIBUTING.md',
+);
+
 project.gitignore.exclude('.vscode/');
+
+// Too many console statements
+project.eslint?.addRules({ 'no-console': ['off'] });
 
 // required for esbuild > v0.14.32
 // see https://github.com/evanw/esbuild/pull/2155

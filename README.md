@@ -1,4 +1,7 @@
-# node-backpack
+# node-bundle
+
+> **NOTE:** This tool should only be used on packages in this repository,
+> and is not intended for external usage.
 
 You can use this tool to help create bundled packages with minimal dependencies and appropriate license attributions.
 
@@ -80,14 +83,14 @@ only CLI applications.
 Run the tool from the root directory of your package.
 
 ```console
-$ node-backpack --help
-Usage: node-backpack COMMAND
+$ node-bundle --help
+Usage: node-bundle COMMAND
 
 Commands:
-  node-backpack validate  Validate the package is ready for bundling
-  node-backpack write     Write the bundled version of the project to a temp
+  node-bundle validate  Validate the package is ready for bundling
+  node-bundle write     Write the bundled version of the project to a temp
                         directory
-  node-backpack pack      Write the bundle and create the tarball
+  node-bundle pack      Write the bundle and create the tarball
 
 Options:
   --entrypoint       List of entrypoints to bundle                       [array]
@@ -110,7 +113,7 @@ Options:
 You can also use the programmatic access:
 
 ```ts
-import { Bundle } from 'node-backpack';
+import { Bundle } from '@aws-cdk/node-bundle';
 
 const bundle = new Bundle({
   packageDir: process.cwd(),
@@ -124,15 +127,15 @@ bundle.pack();
 
 We recommend to integrate this tool in the following way:
 
-1. Add a `node-backpack validate` command as a post compile step.
-2. Set your packaging command to `node-backpack pack`.
+1. Add a `node-bundle validate` command as a post compile step.
+2. Set your packaging command to `node-bundle pack`.
 
 This way, you can validate local dev builds not to break any functionality needed for bundling.
-In addition, developers can run `node-backpack validate --fix` to automatically fix any (fixable) violations
+In addition, developers can run `node-bundle validate --fix` to automatically fix any (fixable) violations
 and commit that to source control.
 
 For example, if a dependency is added but the attribution file has not been re-generated,
-you can use `node-backpack validate` to catch this, and regenerate it with `node-backpack validate --fix`.
+you can use `node-bundle validate` to catch this, and regenerate it with `node-bundle validate --fix`.
 
 ## Take into account
 
@@ -148,13 +151,4 @@ Note that this will balloon up the package size significantly.
 If you are bundling a CLI application that also has top level exports, we suggest to extract
 the CLI functionality into a function, and add this function as an export to `index.js`.
 
-> See [aws-cdk](https://github.com/aws/aws-cdk/blob/master/packages/aws-cdk/bin/cdk.ts) as an example.
-
-## Security
-
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
-
-## License
-
-This project is licensed under the Apache-2.0 License.
-
+> See [aws-cdk](https://github.com/aws/aws-cdk-cli/blob/main/packages/aws-cdk/bin/cdk) as an example.
