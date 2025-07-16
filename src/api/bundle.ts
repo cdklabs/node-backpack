@@ -115,6 +115,17 @@ export interface BundleProps {
   readonly minifySyntax?: boolean;
 
   /**
+   * Always keep the original value of the `name` property.
+   * Minification renames symbols to reduce code size and bundling sometimes need to rename symbols to avoid collisions.
+   * This option allows to preserve the original name values even in minified code.
+   *
+   * @see https://esbuild.github.io/api/#keep-names
+   *
+   * @default true
+   */
+  readonly keepNames?: boolean;
+
+  /**
    * Write the metafile into this location.
    *
    * @default - no metafile is written
@@ -199,6 +210,7 @@ export class Bundle {
   private readonly minifyWhitespace?: boolean;
   private readonly minifyIdentifiers?: boolean;
   private readonly minifySyntax?: boolean;
+  private readonly keepNames?: boolean;
   private readonly metafile?: string;
 
   private _bundle?: esbuild.BuildResult;
@@ -222,6 +234,7 @@ export class Bundle {
     this.minifyWhitespace = props.minifyWhitespace;
     this.minifyIdentifiers = props.minifyIdentifiers;
     this.minifySyntax = props.minifySyntax;
+    this.keepNames = props.keepNames ?? true;
     this.metafile = props.metafile;
 
     const entryPoints = props.entryPoints ?? (this.manifest.main ? [this.manifest.main] : []);
@@ -451,6 +464,7 @@ export class Bundle {
       minifyWhitespace: this.minifyWhitespace,
       minifyIdentifiers: this.minifyIdentifiers,
       minifySyntax: this.minifySyntax,
+      keepNames: this.keepNames,
       treeShaking: true,
       absWorkingDir: this.packageDir,
       external: [...(this.externals.dependencies ?? []), ...(this.externals.optionalDependencies ?? [])],
