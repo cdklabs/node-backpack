@@ -8,6 +8,7 @@ const project = new CdklabsTypeScriptProject({
   projenrcTs: true,
   defaultReleaseBranch: 'main',
   releaseToNpm: true,
+  enablePRAutoMerge: true,
   devDeps: [
     '@types/madge',
     '@types/license-checker',
