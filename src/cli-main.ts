@@ -19,6 +19,7 @@ export async function cliMain(cliArgs: string[]) {
     .option('test', { type: 'string', desc: 'Validation command to sanity test the bundle after its created' })
     .option('minify-whitespace', { type: 'boolean', default: false, desc: 'Minify whitespace' })
     .option('metafile', { type: 'string', desc: 'Produce a metafile about the build that can be analyzed' })
+    .option('format', { type: 'string', choices: ['cjs', 'esm'], default: 'cjs', desc: 'Preferred format for resolving dependencies' })
     .command('validate', 'Validate the package is ready for bundling', args => args
       .option('fix', { type: 'boolean', default: false, alias: 'f', desc: 'Fix any fixable violations' }),
     )
@@ -85,6 +86,7 @@ export async function cliMain(cliArgs: string[]) {
     test: argv.test,
     minifyWhitespace: argv['minify-whitespace'],
     metafile: argv.metafile,
+    format: argv.format as 'cjs' | 'esm',
   };
 
   const bundle = new Bundle(props);

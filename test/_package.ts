@@ -71,6 +71,33 @@ export class Package {
     return new Package(dir, manifest, index, foo, bar, options.notice ?? '');
   }
 
+  /**
+   * Create a package with dual CJS/ESM exports.
+   */
+  public static createDualMode(options: PackageOptions): Package {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), path.sep));
+    const manifest: any = {
+      name: options.name,
+      version: '0.0.1',
+      exports: {
+        '.': {
+          import: './dist/index.mjs',
+          require: './dist/index.cjs',
+        },
+      },
+    };
+
+    if (options.licenses?.length === 1) {
+      manifest.license = options.licenses[0];
+    }
+
+    const pkg = new Package(dir, manifest, [], [], [], options.notice ?? '');
+    pkg.isDualMode = true;
+    return pkg;
+  }
+
+  private isDualMode = false;
+
   private readonly dependencies: Package[] = [];
 
   constructor(
@@ -103,9 +130,17 @@ export class Package {
   public write() {
     fs.mkdirSync(path.join(this.dir, 'lib'));
     fs.writeFileSync(path.join(this.dir, 'package.json'), JSON.stringify(this.manifest, null, 2));
-    fs.writeFileSync(path.join(this.dir, 'lib', 'foo.js'), this.foo.join('\n'));
-    fs.writeFileSync(path.join(this.dir, 'lib', 'bar.js'), this.bar.join('\n'));
-    fs.writeFileSync(path.join(this.dir, this.entrypoint), this.index.join('\n'));
+
+    if (this.isDualMode) {
+      fs.mkdirSync(path.join(this.dir, 'dist'));
+      fs.writeFileSync(path.join(this.dir, 'dist', 'index.cjs'), 'module.exports = "from-cjs";');
+      fs.writeFileSync(path.join(this.dir, 'dist', 'index.mjs'), 'export default "from-esm";');
+    } else {
+      fs.writeFileSync(path.join(this.dir, 'lib', 'foo.js'), this.foo.join('\n'));
+      fs.writeFileSync(path.join(this.dir, 'lib', 'bar.js'), this.bar.join('\n'));
+      fs.writeFileSync(path.join(this.dir, this.entrypoint), this.index.join('\n'));
+    }
+
     fs.writeFileSync(path.join(this.dir, 'THIRD_PARTY_LICENSES'), this.attributions);
     for (const dep of this.dependencies) {
       dep.write();
@@ -119,6 +154,20 @@ export class Package {
    */
   public addDependency(options: PackageOptions): Package {
     const dependency = Package.create(options);
+    this.dependencies.push(dependency);
+
+    this.manifest.dependencies = this.manifest.dependencies ?? {};
+
+    this.index.push(`require("${dependency.name}");`);
+    this.manifest.dependencies[dependency.name] = path.join(dependency.dir, `${dependency.name}-${dependency.version}.tgz`);
+    return dependency;
+  }
+
+  /**
+   * Add a dependency with both CJS and ESM exports.
+   */
+  public addDualModeDependency(options: PackageOptions): Package {
+    const dependency = Package.createDualMode(options);
     this.dependencies.push(dependency);
 
     this.manifest.dependencies = this.manifest.dependencies ?? {};

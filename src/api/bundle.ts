@@ -131,6 +131,16 @@ export interface BundleProps {
    * @default - no metafile is written
    */
   readonly metafile?: string;
+
+  /**
+   * Preferred format for resolving dependencies.
+   *
+   * - 'cjs': Prefer CommonJS exports (require condition)
+   * - 'esm': Prefer ESM exports (import condition)
+   *
+   * @default 'cjs'
+   */
+  readonly format?: 'cjs' | 'esm';
 }
 
 /**
@@ -212,6 +222,7 @@ export class Bundle {
   private readonly minifySyntax?: boolean;
   private readonly keepNames?: boolean;
   private readonly metafile?: string;
+  private readonly format: 'cjs' | 'esm';
 
   private _bundle?: esbuild.BuildResult;
   private _dependencies?: Package[];
@@ -236,6 +247,7 @@ export class Bundle {
     this.minifySyntax = props.minifySyntax;
     this.keepNames = props.keepNames ?? true;
     this.metafile = props.metafile;
+    this.format = props.format ?? 'cjs';
 
     const entryPoints = props.entryPoints ?? (this.manifest.main ? [this.manifest.main] : []);
 
@@ -471,6 +483,7 @@ export class Bundle {
       write: false,
       outdir: this.packageDir,
       allowOverwrite: true,
+      conditions: [this.format === 'cjs' ? 'require' : 'import'],
     });
 
     // Write metafile only when requested

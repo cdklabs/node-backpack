@@ -146,3 +146,35 @@ test('write ignores only .git and node_modules directories', () => {
   expect(fs.existsSync(path.join(bundleDir, '.gitignore'))).toBeTruthy();
   expect(fs.existsSync(path.join(bundleDir, 'node_modules_file'))).toBeTruthy();
 });
+
+test('format option controls module resolution', () => {
+  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
+  pkg.addDualModeDependency({ name: 'dual-dep', licenses: ['MIT'] });
+
+  pkg.write();
+  pkg.install();
+
+  // Bundle with CJS format (default)
+  const cjsBundle = new Bundle({
+    packageDir: pkg.dir,
+    entryPoints: [pkg.entrypoint],
+    allowedLicenses: ['Apache-2.0', 'MIT'],
+    format: 'cjs',
+  });
+  const cjsBundleDir = cjsBundle.write();
+  const cjsContent = fs.readFileSync(path.join(cjsBundleDir, pkg.entrypoint), 'utf-8');
+  expect(cjsContent).toContain('from-cjs');
+  expect(cjsContent).not.toContain('from-esm');
+
+  // Bundle with ESM format
+  const esmBundle = new Bundle({
+    packageDir: pkg.dir,
+    entryPoints: [pkg.entrypoint],
+    allowedLicenses: ['Apache-2.0', 'MIT'],
+    format: 'esm',
+  });
+  const esmBundleDir = esmBundle.write();
+  const esmContent = fs.readFileSync(path.join(esmBundleDir, pkg.entrypoint), 'utf-8');
+  expect(esmContent).toContain('from-esm');
+  expect(esmContent).not.toContain('from-cjs');
+});
