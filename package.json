@@ -63,7 +63,7 @@
     "license-checker": "^25.0.1",
     "madge": "^5.0.2",
     "shlex": "^2.1.2",
-    "yargs": "^17.7.2"
+    "yargs": "^17.7.3"
   },
   "main": "lib/index.js",
   "license": "Apache-2.0",
