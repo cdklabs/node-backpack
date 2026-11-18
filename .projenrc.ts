@@ -1,11 +1,15 @@
 import { CdklabsTypeScriptProject } from 'cdklabs-projen-project-types';
+import { javascript } from 'projen';
 
 const project = new CdklabsTypeScriptProject({
+  name: 'node-backpack',
+  private: false,
+
+  projenrcTs: true,
+  packageManager: javascript.NodePackageManager.YARN_BERRY,
+
   setNodeEngineVersion: false,
   stability: 'stable',
-  private: false,
-  name: 'node-backpack',
-  projenrcTs: true,
   defaultReleaseBranch: 'main',
   releaseToNpm: true,
   enablePRAutoMerge: true,
