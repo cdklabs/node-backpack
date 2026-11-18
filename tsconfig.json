@@ -13,7 +13,7 @@
       "es2020",
       "dom"
     ],
-    "module": "CommonJS",
+    "module": "node16",
     "noEmitOnError": false,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
@@ -33,7 +33,8 @@
       "license-checker",
       "madge",
       "node"
-    ]
+    ],
+    "moduleResolution": "node16"
   },
   "include": [
     "src/**/*.ts"

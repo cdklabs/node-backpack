@@ -127,8 +127,17 @@
       "steps": [
         {
           "execArgs": [
-            "ts-node",
-            "--project",
+            "tsc",
+            "--noEmit",
+            "-p",
+            "projenrc/tsconfig.json"
+          ],
+          "name": "typecheck"
+        },
+        {
+          "execArgs": [
+            "tsx",
+            "--tsconfig",
             "projenrc/tsconfig.json",
             ".projenrc.ts"
           ]
@@ -411,7 +420,7 @@
             "--peer",
             "--no-deprecated",
             "--dep=dev",
-            "--filter=@types/fs-extra,@types/jest,@types/license-checker,@types/madge,eslint-import-resolver-typescript,eslint-plugin-import,jest,ts-jest,ts-node,typescript"
+            "--filter=@types/fs-extra,@types/jest,@types/license-checker,@types/madge,eslint-import-resolver-typescript,eslint-plugin-import,jest,ts-jest,tsx,typescript"
           ]
         },
         {
@@ -437,9 +446,8 @@
             "eslint",
             "jest",
             "jest-junit",
-            "prettier",
             "ts-jest",
-            "ts-node",
+            "tsx",
             "typescript"
           ]
         },

@@ -69,12 +69,7 @@
     },
     {
       "name": "jest-junit",
-      "version": "^16",
-      "type": "build"
-    },
-    {
-      "name": "prettier",
-      "version": "^2.8",
+      "version": "^17",
       "type": "build"
     },
     {
@@ -86,7 +81,7 @@
       "type": "build"
     },
     {
-      "name": "ts-node",
+      "name": "tsx",
       "type": "build"
     },
     {
