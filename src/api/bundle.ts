@@ -353,7 +353,7 @@ export class Bundle {
       console.log('Packing');
       const tarball = shell('npm pack', { quiet: true, cwd: bundleDir }).trim();
       const dest = path.join(realTarget, tarball);
-      fs.copySync(path.join(bundleDir, tarball), dest, { recursive: true });
+      fs.copySync(path.join(bundleDir, tarball), dest);
       return dest;
     } finally {
       fs.removeSync(bundleDir);
@@ -560,7 +560,7 @@ export class Bundle {
   private writeResources(workdir: string) {
     for (const [src, dst] of Object.entries(this.resources)) {
       const to = path.join(workdir, dst);
-      fs.copySync(path.join(this.packageDir, src), to, { recursive: true });
+      fs.copySync(path.join(this.packageDir, src), to);
     }
   }
 

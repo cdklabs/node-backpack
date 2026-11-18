@@ -1,5 +1,5 @@
 import { CdklabsTypeScriptProject } from 'cdklabs-projen-project-types';
-import { javascript } from 'projen';
+import { javascript, typescript } from 'projen';
 
 const project = new CdklabsTypeScriptProject({
   name: 'node-backpack',
@@ -7,6 +7,13 @@ const project = new CdklabsTypeScriptProject({
 
   projenrcTs: true,
   packageManager: javascript.NodePackageManager.YARN_BERRY,
+  runner: typescript.TypeScriptRunner.tsx({ typeCheck: true }),
+  tsconfig: {
+    compilerOptions: {
+      module: 'node16',
+      moduleResolution: javascript.TypeScriptModuleResolution.NODE16,
+    },
+  },
 
   setNodeEngineVersion: false,
   stability: 'stable',
@@ -32,10 +39,11 @@ const project = new CdklabsTypeScriptProject({
   },
 });
 
-project.addDevDeps(
-  'jest-junit@^16',
-  'prettier@^2.8',
-);
+// minimatch < 11.0.1 is affected by GHSA-g3hv-75wg-m249.
+// Only redirect the affected ranges, minimatch@3 is fine and has a different API.
+for (const range of ['^9.0.4', '^10.2.2']) {
+  project.package.file.addOverride(`resolutions.minimatch@${range.replace(/\./g, '\\.')}`, '^11.0.1');
+}
 project.npmignore?.addPatterns(
   // don't inlcude config files
   '.eslintrc.js',
