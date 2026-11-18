@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
-import type { ModuleInfo } from 'license-checker';
+import type { ModuleInfo } from 'license-checker-rseidelsohn' with { 'resolution-mode': 'import' };
 import { shell } from './_shell';
 import type { Package } from './bundle';
 import type { Violation } from './violation';
@@ -167,7 +167,7 @@ export class Attributions {
       // we don't use the programmatic API since it only offers an async API.
       // prefer to stay sync for now since its easier to integrate with other tooling.
       // will offer an async API further down the road.
-      const command = `${require.resolve('license-checker/bin/license-checker')} --json --packages "${_packages.join(';')}"`;
+      const command = `"${process.execPath}" "${licenseCheckerBin()}" --json --includePackages "${_packages.join(';')}"`;
       const output = shell(command, { cwd: _cwd, quiet: true });
       return JSON.parse(output);
     }
@@ -190,11 +190,11 @@ export class Attributions {
 
       const noticeText = info.noticeFile ? fs.readFileSync(info.noticeFile, { encoding: 'utf-8' }) : undefined;
 
-      // for some reason, the license-checker package falls back to the README.md file of the package for license
-      // text. this seems strange, disabling that for now.
-      // see https://github.com/davglass/license-checker/blob/master/lib/license-files.js#L9
+      // license-checker falls back to the README file of the package for license text.
+      // a README is not a license, so we ignore it. LICENSE.md and similar are fine.
       // note that a non existing license file is ok as long as the license type could be extracted.
-      const licenseFile = info.licenseFile?.toLowerCase().endsWith('.md') ? undefined : info.licenseFile;
+      const isReadme = info.licenseFile && path.basename(info.licenseFile, path.extname(info.licenseFile)).toUpperCase() === 'README';
+      const licenseFile = isReadme ? undefined : info.licenseFile;
       const licenseText = licenseFile ? fs.readFileSync(licenseFile, { encoding: 'utf-8' }) : undefined;
 
       // the licenses key comes in different types but we convert it here
@@ -212,6 +212,17 @@ export class Attributions {
 
     return attributions;
   }
+}
+
+/**
+ * Path to the license-checker CLI script.
+ *
+ * The script name has changed between minor versions, so we read it from the package manifest.
+ */
+function licenseCheckerBin(): string {
+  const manifestPath = require.resolve('license-checker-rseidelsohn/package.json');
+  const bin = fs.readJSONSync(manifestPath).bin['license-checker-rseidelsohn'];
+  return path.join(path.dirname(manifestPath), bin);
 }
 
 /**

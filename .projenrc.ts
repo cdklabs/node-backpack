@@ -22,13 +22,13 @@ const project = new CdklabsTypeScriptProject({
   enablePRAutoMerge: true,
   devDeps: [
     '@types/madge',
-    '@types/license-checker',
     '@types/fs-extra',
   ],
   deps: [
     'esbuild',
     'madge',
-    'license-checker',
+    // v5 requires node >= 24
+    'license-checker-rseidelsohn@^4',
     'yargs',
     'fs-extra',
     'shlex',

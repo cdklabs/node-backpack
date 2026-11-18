@@ -28,6 +28,11 @@ export interface PackageOptions {
    * Package notice file.
    */
   readonly notice?: string;
+
+  /**
+   * Additional files to write to the package root, keyed by file name.
+   */
+  readonly files?: Record<string, string>;
 }
 
 /**
@@ -68,7 +73,7 @@ export class Package {
       'require("./bar");',
     ];
 
-    return new Package(dir, manifest, index, foo, bar, options.notice ?? '');
+    return new Package(dir, manifest, index, foo, bar, options.notice ?? '', options.files ?? {});
   }
 
   private readonly dependencies: Package[] = [];
@@ -79,7 +84,8 @@ export class Package {
     public readonly index: string[],
     public readonly foo: string[],
     public readonly bar: string[],
-    public attributions: string) {
+    public attributions: string,
+    public readonly files: Record<string, string> = {}) {
     this.manifest.main = this.entrypoint;
   }
 
@@ -107,6 +113,9 @@ export class Package {
     fs.writeFileSync(path.join(this.dir, 'lib', 'bar.js'), this.bar.join('\n'));
     fs.writeFileSync(path.join(this.dir, this.entrypoint), this.index.join('\n'));
     fs.writeFileSync(path.join(this.dir, 'THIRD_PARTY_LICENSES'), this.attributions);
+    for (const [name, content] of Object.entries(this.files)) {
+      fs.writeFileSync(path.join(this.dir, name), content);
+    }
     for (const dep of this.dependencies) {
       dep.write();
       dep.pack();
