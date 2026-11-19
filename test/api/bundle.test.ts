@@ -146,3 +146,62 @@ test('write ignores only .git and node_modules directories', () => {
   expect(fs.existsSync(path.join(bundleDir, '.gitignore'))).toBeTruthy();
   expect(fs.existsSync(path.join(bundleDir, 'node_modules_file'))).toBeTruthy();
 });
+
+test('attributes license text from a LICENSE.md file', () => {
+  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
+  const dep = pkg.addDependency({
+    name: 'dep1',
+    licenses: ['BlueOak-1.0.0'],
+    files: { 'LICENSE.md': '# Blue Oak Model License\n\nVersion 1.0.0' },
+  });
+
+  pkg.write();
+  pkg.install();
+
+  const bundle = new Bundle({
+    packageDir: pkg.dir,
+    entryPoints: [pkg.entrypoint],
+    allowedLicenses: ['Apache-2.0', 'BlueOak-1.0.0'],
+  });
+  bundle.validate({ fix: true });
+
+  const attributions = fs.readFileSync(path.join(pkg.dir, 'THIRD_PARTY_LICENSES'), 'utf-8');
+  expect(attributions).toEqual([
+    'The consumer package includes the following third-party software/licensing:',
+    '',
+    `** ${dep.name}@${dep.version} - https://www.npmjs.com/package/${dep.name}/v/${dep.version} | BlueOak-1.0.0`,
+    '# Blue Oak Model License\n\nVersion 1.0.0',
+    '',
+    '----------------',
+    '',
+  ].join('\n'));
+});
+
+test('does not use a README as license text', () => {
+  const pkg = Package.create({ name: 'consumer', licenses: ['Apache-2.0'] });
+  const dep = pkg.addDependency({
+    name: 'dep1',
+    licenses: ['MIT'],
+    files: { 'README.md': '# dep1\n\nNot a license.' },
+  });
+
+  pkg.write();
+  pkg.install();
+
+  const bundle = new Bundle({
+    packageDir: pkg.dir,
+    entryPoints: [pkg.entrypoint],
+    allowedLicenses: ['Apache-2.0', 'MIT'],
+  });
+  bundle.validate({ fix: true });
+
+  const attributions = fs.readFileSync(path.join(pkg.dir, 'THIRD_PARTY_LICENSES'), 'utf-8');
+  expect(attributions).toEqual([
+    'The consumer package includes the following third-party software/licensing:',
+    '',
+    `** ${dep.name}@${dep.version} - https://www.npmjs.com/package/${dep.name}/v/${dep.version} | MIT`,
+    '',
+    '----------------',
+    '',
+  ].join('\n'));
+});

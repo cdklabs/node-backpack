@@ -30,7 +30,6 @@
     "types": [
       "fs-extra",
       "jest",
-      "license-checker",
       "madge",
       "node"
     ],

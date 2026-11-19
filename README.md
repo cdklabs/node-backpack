@@ -34,7 +34,7 @@ You can use this tool to help achieve the following tasks:
 
 - Validate and create THIRD_PARTY_LICENCES file with third-party attributions for packages with declared licensing information.
 
-  > Currently done with [license-checker](https://www.npmjs.com/package/license-checker), but is subject to change.
+  > Currently done with [license-checker-rseidelsohn](https://www.npmjs.com/package/license-checker-rseidelsohn), but is subject to change.
 
 - Detect circular imports that are exhibited in your package, or in your dependency closure.
 

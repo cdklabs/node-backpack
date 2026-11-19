@@ -332,7 +332,7 @@
             "--peer",
             "--no-deprecated",
             "--dep=prod",
-            "--filter=esbuild,fs-extra,license-checker,madge,shlex,yargs"
+            "--filter=esbuild,fs-extra,madge,shlex,yargs"
           ]
         },
         {
@@ -345,7 +345,7 @@
             "-R",
             "esbuild",
             "fs-extra",
-            "license-checker",
+            "license-checker-rseidelsohn",
             "madge",
             "shlex",
             "yargs"
@@ -420,7 +420,7 @@
             "--peer",
             "--no-deprecated",
             "--dep=dev",
-            "--filter=@types/fs-extra,@types/jest,@types/license-checker,@types/madge,eslint-import-resolver-typescript,eslint-plugin-import,jest,ts-jest,tsx,typescript"
+            "--filter=@types/fs-extra,@types/jest,@types/madge,eslint-import-resolver-typescript,eslint-plugin-import,jest,ts-jest,tsx,typescript"
           ]
         },
         {
@@ -434,7 +434,6 @@
             "@stylistic/eslint-plugin",
             "@types/fs-extra",
             "@types/jest",
-            "@types/license-checker",
             "@types/madge",
             "@types/node",
             "@typescript-eslint/eslint-plugin",

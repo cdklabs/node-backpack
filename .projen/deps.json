@@ -14,10 +14,6 @@
       "type": "build"
     },
     {
-      "name": "@types/license-checker",
-      "type": "build"
-    },
-    {
       "name": "@types/madge",
       "type": "build"
     },
@@ -97,7 +93,8 @@
       "type": "runtime"
     },
     {
-      "name": "license-checker",
+      "name": "license-checker-rseidelsohn",
+      "version": "^4",
       "type": "runtime"
     },
     {
